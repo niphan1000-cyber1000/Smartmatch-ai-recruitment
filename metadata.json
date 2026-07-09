@@ -1,0 +1,6 @@
+{
+  "name": "Smart Resume Matcher",
+  "description": "An AI-powered ATS assistant that screens and matches candidate profiles and GitHub projects against job descriptions in real-time, providing detailed skill gaps, matching scores, and ATS optimization suggestions.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
