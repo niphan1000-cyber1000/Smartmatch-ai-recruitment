@@ -33,7 +33,7 @@ Rather than relying purely on rigid keyword-matching tools, SmartMatch AI assist
 *   **💡 AI-Generated Interview Questions**: Custom-tailored behavioral and technical interview questions based directly on the identified skill gaps and experience.
 *   **🗄️ Offline-First Recruiter Dashboard**: Secure local persistence utilizing **Android Room SQLite Database** to store past matches, compare scores, search records, and recall previous analyses instantly.
 *   **📋 Quick-Test Templates**: Pre-loaded mock profiles (e.g., Senior DevOps, Frontend Developer, Mobile Engineer) to test matching performance in a single tap.
-*   **🌐 Real-Time Google Gemini Integration**: Leverages the official Google AI client SDK to conduct secure client-side semantic analysis via Google's secure AI infrastructure.
+*   **🌐 Real-Time Google Gemini Integration**: Uses a custom Retrofit-based REST client to call the Gemini `generateContent` API directly for client-side semantic analysis.
 *   **🎨 Sleek M3 Design Theme**: Fully optimized with edge-to-edge screens, fluid shadows, sleek high-contrast indigo gradients, and accessibility-compliant touch targets.
 
 ---
@@ -93,7 +93,7 @@ graph TD
 *   **Theme**: Material Design 3 (M3) incorporating custom palettes, edge-to-edge drawing (`enableEdgeToEdge()`), and dynamic ripple touch actions.
 *   **Database (Local)**: [Room Database](https://developer.android.com/training/data-storage/room) — Local SQLite ORM with Kotlin Symbol Processing (KSP).
 *   **Concurrency**: [Kotlin Coroutines & Flow](https://kotlinlang.org/docs/coroutines-overview.html) — High-performance reactive state management.
-*   **Generative AI Engine**: [Google Gemini Client SDK](https://ai.google.dev/gemini-api/docs) — Facilitating prompt engineering, parameter setup, and JSON response parsing.
+*   **Generative AI Engine**: Custom [Retrofit](https://square.github.io/retrofit/) + [OkHttp](https://square.github.io/okhttp/) client calling the [Gemini REST API](https://ai.google.dev/gemini-api/docs) directly — no official client SDK is used; requests/responses are modeled and parsed with Moshi.
 *   **Testing Core**: [Robolectric](https://robolectric.org) & [Roborazzi](https://github.com/takahirom/roborazzi) — JVM-based screenshot, UI layout, and viewmodel state verification.
 
 ---
