@@ -40,6 +40,8 @@ class MatchRepository(private val matchRecordDao: MatchRecordDao) {
             
             Analyze the provided Candidate Information against the Job Description. Be objective, thorough, and precise.
             
+            CRITICAL INSTRUCTION FOR PARSING: You MUST start your response with a machine-readable HTML comment holding the calculated match score percentage, exactly like this: <!--SCORE:85--> (where 85 is the calculated score between 0 and 100 based on the skills and requirements met). Do not omit this!
+            
             Please provide the output in the following format (Strictly use Markdown with the exact section headings):
             
             ## 📊 Overview & Match Score

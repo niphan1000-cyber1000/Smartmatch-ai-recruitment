@@ -447,7 +447,7 @@ fun AnalyzeTab(
                 AnalysisResultsDashboard(
                     candidateName = candidateName,
                     jobTitle = jobTitle,
-                    matchScore = currentScore ?: 75,
+                    matchScore = currentScore,
                     rawMarkdown = currentResult,
                     selectedRecord = selectedRecord,
                     onCopyResult = { onCopyResult(currentResult) }
@@ -572,7 +572,7 @@ fun ApiKeyWarningCard() {
 fun AnalysisResultsDashboard(
     candidateName: String,
     jobTitle: String,
-    matchScore: Int,
+    matchScore: Int?,
     rawMarkdown: String,
     selectedRecord: MatchRecord?,
     onCopyResult: () -> Unit
@@ -712,11 +712,12 @@ fun AnalysisResultsDashboard(
                     modifier = Modifier.size(160.dp)
                 ) {
                     val scoreAnim by animateFloatAsState(
-                        targetValue = matchScore.toFloat(),
+                        targetValue = matchScore?.toFloat() ?: 0f,
                         animationSpec = tween(1200)
                     )
 
                     val gaugeColor = when {
+                        matchScore == null -> Color(0xFF94A3B8)
                         matchScore >= 80 -> MatchHigh
                         matchScore >= 60 -> MatchMedium
                         else -> MatchLow
@@ -743,32 +744,44 @@ fun AnalysisResultsDashboard(
                         )
 
                         // Active Gauge Arc
-                        drawArc(
-                            color = gaugeColor,
-                            startAngle = -225f,
-                            sweepAngle = (scoreAnim / 100f) * 270f,
-                            useCenter = false,
-                            topLeft = topLeftOffset,
-                            size = sizeDimensions,
-                            style = Stroke(width = strokeWidth, cap = StrokeCap.Round)
-                        )
+                        if (matchScore != null) {
+                            drawArc(
+                                color = gaugeColor,
+                                startAngle = -225f,
+                                sweepAngle = (scoreAnim / 100f) * 270f,
+                                useCenter = false,
+                                topLeft = topLeftOffset,
+                                size = sizeDimensions,
+                                style = Stroke(width = strokeWidth, cap = StrokeCap.Round)
+                            )
+                        }
                     }
 
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Row(verticalAlignment = Alignment.Bottom) {
+                        if (matchScore != null) {
+                            Row(verticalAlignment = Alignment.Bottom) {
+                                Text(
+                                    text = "${scoreAnim.toInt()}",
+                                    fontSize = 44.sp,
+                                    fontWeight = FontWeight.Black,
+                                    color = Color(0xFF111827),
+                                    letterSpacing = (-1).sp
+                                )
+                                Text(
+                                    text = "%",
+                                    fontSize = 18.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = Color(0xFF9CA3AF),
+                                    modifier = Modifier.padding(bottom = 6.dp)
+                                )
+                            }
+                        } else {
                             Text(
-                                text = "${scoreAnim.toInt()}",
-                                fontSize = 44.sp,
+                                text = "N/A",
+                                fontSize = 40.sp,
                                 fontWeight = FontWeight.Black,
-                                color = Color(0xFF111827),
+                                color = Color(0xFF64748B),
                                 letterSpacing = (-1).sp
-                            )
-                            Text(
-                                text = "%",
-                                fontSize = 18.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = Color(0xFF9CA3AF),
-                                modifier = Modifier.padding(bottom = 6.dp)
                             )
                         }
                         Text(
@@ -779,6 +792,7 @@ fun AnalysisResultsDashboard(
                             letterSpacing = 1.sp
                         )
                         val suitability = when {
+                            matchScore == null -> "ไม่ระบุคะแนนชัดเจน"
                             matchScore >= 85 -> "เหมาะสมสูงมาก"
                             matchScore >= 75 -> "เหมาะสมดีเยี่ยม"
                             matchScore >= 60 -> "ผ่านเกณฑ์เบื้องต้น"
@@ -794,6 +808,26 @@ fun AnalysisResultsDashboard(
                     }
                 }
 
+                if (matchScore == null) {
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .background(Color(0xFFF8FAFC), RoundedCornerShape(12.dp))
+                            .border(1.dp, Color(0xFFE2E8F0), RoundedCornerShape(12.dp))
+                            .padding(12.dp)
+                    ) {
+                        Text(
+                            text = "ไม่สามารถระบุคะแนนเปอร์เซ็นต์ได้ชัดเจน โปรดตรวจสอบรายละเอียดผลวิเคราะห์เชิงคุณภาพด้านล่าง",
+                            color = Color(0xFF475569),
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Medium,
+                            textAlign = TextAlign.Center,
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                    }
+                }
+
                 Spacer(modifier = Modifier.height(24.dp))
 
                 // Quick Insights Grid
@@ -803,6 +837,7 @@ fun AnalysisResultsDashboard(
                 ) {
                     // Skills Gap card
                     val skillsGapVal = when {
+                        matchScore == null -> "ไม่ได้ระบุ"
                         matchScore >= 85 -> "-1.8% (Minor)"
                         matchScore >= 70 -> "-4.5% (Moderate)"
                         else -> "-12.8% (Significant)"
@@ -833,6 +868,7 @@ fun AnalysisResultsDashboard(
                     // ATS Rank card
                     val totalCount = 124 + (candidateName.hashCode().let { if (it < 0) -it else it } % 50)
                     val rankVal = when {
+                        matchScore == null -> "N/A"
                         matchScore >= 90 -> "#1 of $totalCount"
                         matchScore >= 80 -> "#3 of $totalCount"
                         matchScore >= 70 -> "#8 of $totalCount"
@@ -1194,6 +1230,7 @@ fun HistoryRecordCard(
     }
 
     val badgeColor = when {
+        record.matchScore == null -> Color(0xFF64748B)
         record.matchScore >= 80 -> MatchHigh
         record.matchScore >= 60 -> MatchMedium
         else -> MatchLow
@@ -1259,7 +1296,7 @@ fun HistoryRecordCard(
                         .padding(horizontal = 12.dp, vertical = 6.dp)
                 ) {
                     Text(
-                        text = "${record.matchScore}%",
+                        text = if (record.matchScore != null) "${record.matchScore}%" else "N/A",
                         color = badgeColor,
                         fontWeight = FontWeight.Black,
                         fontSize = 14.sp

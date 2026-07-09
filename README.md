@@ -1,21 +1,255 @@
-<div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://ai.google.dev/static/site-assets/images/share-ais-513315318.png" />
-</div>
+# 💼 SmartMatch AI Recruitment
 
-# Run and deploy your AI Studio app
+[![Platform](https://img.shields.io/badge/Platform-Android-3DDC84.svg?style=flat-square&logo=android)](https://developer.android.com)
+[![Kotlin](https://img.shields.io/badge/Kotlin-1.9+-7F52FF.svg?style=flat-square&logo=kotlin)](https://kotlinlang.org)
+[![Compose](https://img.shields.io/badge/UI-Jetpack%20Compose-4285F4.svg?style=flat-square&logo=jetpackcompose)](https://developer.android.com/jetpack/compose)
+[![Gemini](https://img.shields.io/badge/AI-Google%20Gemini-FF6F00.svg?style=flat-square&logo=google-gemini)](https://ai.google.dev/)
+[![License](https://img.shields.io/badge/License-MIT-blue.svg?style=flat-square)](LICENSE)
 
-This contains everything you need to run your app locally.
+An advanced, modern Android recruitment screening application powered by **Google Gemini AI**. **SmartMatch AI Recruitment** enables recruiters and hiring managers to instantly parse, evaluate, and match candidate resumes with job descriptions. The application highlights skill matches, reveals skill gaps, estimates ATS ranking percentages, and automatically compiles tailor-made interview questions—all stored securely in a local SQLite database using **Room** with an elegant, responsive, and tactile **Sleek Interface**.
 
-View your app in AI Studio: https://ai.studio/apps/d1356df2-3ed6-4783-b103-7d46844e38e9
+---
 
-## Run Locally
+## 📖 1. Project Overview
 
-**Prerequisites:**  [Android Studio](https://developer.android.com/studio)
+Finding the right candidate among hundreds of applicants is one of the biggest bottlenecks in modern HR departments. **SmartMatch AI Recruitment** leverages state-of-the-art Generative AI models to analyze the semantic fit between applicant resumes/profiles and specific job requirements. 
 
+Unlike simple keyword matching systems, SmartMatch AI understands the context, project descriptions, and skill levels. It translates complex textual profiles into clear visual dashboard indicators, providing objective recruitment insights in seconds.
 
-1. Open Android Studio
-2. Select **Open** and choose the directory containing this project
-3. Allow Android Studio to fix any incompatibilities as it imports the project.
-4. Create a file named `.env` in the project directory and set `GEMINI_API_KEY` in that file to your Gemini API key (see `.env.example` for an example)
-5. Remove this line from the app's `build.gradle.kts` file: `signingConfig = signingConfigs.getByName("debugConfig")`
-6. Run the app on an emulator or physical device
+---
+
+## ✨ 2. Features
+
+*   **📊 Dynamic Match Score Gauge**: A beautifully rendered, tactile custom circular progress gauge that reflects the exact compatibility index of the candidate.
+*   **🔍 Skill Gap Detection**: Instant, color-coded diagnostic summaries showing where the candidate excels and which prerequisites are missing.
+*   **📑 Intelligent Candidate Profile Card**: Real-time generation of custom target role identifiers (`#SDE-XXX`) and live active states for screened candidates.
+*   **💡 AI-Generated Interview Questions**: Custom-tailored behavioral and technical interview questions based directly on the identified skill gaps and experience.
+*   **🗄️ Offline-First Recruiter Dashboard**: Secure local persistence utilizing **Android Room SQLite Database** to store past matches, compare scores, search records, and recall previous analyses instantly.
+*   **📋 Quick-Test Templates**: Pre-loaded mock profiles (e.g., Senior DevOps, Frontend Developer, Mobile Engineer) to test matching performance in a single tap.
+*   **🌐 Real-Time Google Gemini Integration**: Leverages the official Google AI client SDK to conduct secure, server-side semantic analysis.
+*   **🎨 Sleek M3 Design Theme**: Fully optimized with edge-to-edge screens, fluid shadows, sleek high-contrast indigo gradients, and accessibility-compliant touch targets.
+
+---
+
+## 📸 3. Screenshots (Aesthetic Visual Layout)
+
+| **1. Dynamic Job & Candidate Entry** | **2. AI Match Dashboard & Gauge** | **3. AI Insights & Custom Questions** |
+| :---: | :---: | :---: |
+| <img src="assets/screenshots/screenshot_entry.png" width="280" alt="Job & Candidate Details Form"/> | <img src="assets/screenshots/screenshot_score.png" width="280" alt="Match Score Gauge"/> | <img src="assets/screenshots/screenshot_insights.png" width="280" alt="AI Analysis Insights"/> |
+| *Easy copy-paste template insertion and instant triggers.* | *Beautiful indigo Sleek circular progress and ATS stats cards.* | *Detailed positive matches, warnings, and tailored interview scripts.* |
+
+---
+
+## 🏗️ 4. Architecture
+
+The application is structured around official Android Best Practices using **MVVM (Model-View-ViewModel)** and **Repository Pattern**, combined with an offline-first strategy.
+
+```mermaid
+graph TD
+    %% Define presentation elements
+    subgraph UI_Layer [Jetpack Compose UI Layer]
+        MainScreen[MainScreen.kt]
+        DashboardView[Dashboard / Circular Gauge]
+        HistoryList[Match History Cards]
+    end
+
+    subgraph Logic_Layer [State & Logic Layer]
+        ViewModel[MatchViewModel.kt]
+        Factory[MatchViewModelFactory.kt]
+    end
+
+    subgraph Data_Layer [Data Repository Layer]
+        Repository[MatchRepository.kt]
+    end
+
+    subgraph Storage_Layer [Local & Remote Services]
+        RoomDB[(Room SQLite: AppDatabase)]
+        GeminiService[Gemini API Client]
+    end
+
+    %% Data flow connections
+    MainScreen -->|Reads state| ViewModel
+    MainScreen -->|Triggers matching / history| ViewModel
+    ViewModel -->|Dispatches transactions| Repository
+    Repository -->|Queries & saves records| RoomDB
+    Repository -->|Performs semantic evaluation| GeminiService
+```
+
+---
+
+## 🛠️ 5. Tech Stack
+
+*   **Language**: [Kotlin](https://kotlinlang.org) — 100% modern, expressive language.
+*   **UI Framework**: [Jetpack Compose](https://developer.android.com/jetpack/compose) — Declartive UI with Material 3 components.
+*   **Theme**: Material Design 3 (M3) incorporating custom palettes, edge-to-edge drawing (`enableEdgeToEdge()`), and dynamic ripple touch actions.
+*   **Database (Local)**: [Room Database](https://developer.android.com/training/data-storage/room) — Local SQLite ORM with Kotlin Symbol Processing (KSP).
+*   **Concurrency**: [Kotlin Coroutines & Flow](https://kotlinlang.org/docs/coroutines-overview.html) — High-performance reactive state management.
+*   **Generative AI Engine**: [Google Gemini Client SDK](https://ai.google.dev/gpts/docs) — Facilitating prompt engineering, parameter setup, and JSON response parsing.
+*   **Testing Core**: [Robolectric](https://robolectric.org) & [Roborazzi](https://github.com/takahirom/roborazzi) — JVM-based screenshot, UI layout, and viewmodel state verification.
+
+---
+
+## 📥 6. Installation & Setup
+
+Ensure you have the latest stable version of **Android Studio (Koala/Ladybug or newer)** and **JDK 17** installed.
+
+### 1️⃣ Clone the Repository
+```bash
+git clone https://github.com/your-username/smartmatch-ai-recruitment.git
+cd smartmatch-ai-recruitment
+```
+
+### 2️⃣ Project Execution (via Android Studio)
+1. Open Android Studio.
+2. Select **File -> Open** and navigate to the cloned `smartmatch-ai-recruitment` directory.
+3. Allow Gradle to sync dependencies and index the project structure.
+
+### 3️⃣ Build the APK
+To assemble a local debug build, execute the following Gradle task in your terminal:
+```bash
+./gradlew assembleDebug
+```
+The compiled APK will be generated at:
+`app/build/outputs/apk/debug/app-debug.apk`
+
+---
+
+## ⚙️ 7. Configuration & Environment Secrets
+
+The application leverages the safe management of development secrets. Sensitive keys are kept out of code logic using **Secrets Gradle Plugin** and `.env` systems.
+
+### 🔐 Adding Your Gemini API Key
+1. Generate an API Key in the [Google AI Studio Console](https://aistudio.google.com/).
+2. In the project root directory, locate the `.env.example` file and rename it to `.env`:
+   ```bash
+   mv .env.example .env
+   ```
+3. Open `.env` and assign your API key:
+   ```env
+   GEMINI_API_KEY="your_actual_gemini_api_key_here"
+   ```
+4. Gradle will automatically inject the key into `BuildConfig.GEMINI_API_KEY` during compilation.
+
+---
+
+## 📂 8. Project Structure
+
+```
+app/src/main/java/com/example
+├── MainActivity.kt               # Application entry point, loads the Sleek theme
+├── data
+│   ├── api
+│   │   └── GeminiClient.kt       # Configures Gemini model parameters and prompts
+│   ├── local
+│   │   ├── AppDatabase.kt        # Room DB initializer
+│   │   ├── MatchRecord.kt        # Database entity for offline matching records
+│   │   └── MatchRecordDao.kt     # SQLite queries for match reports
+│   ├── model
+│   │   └── MatchResponse.kt      # AI analysis schema model (JSON representation)
+│   └── repository
+│       └── MatchRepository.kt    # Syncs local database updates and remote AI requests
+└── ui
+    ├── theme
+    │   ├── Color.kt              # Sleek Theme color variables (Indigo and Purples)
+    │   ├── Theme.kt              # Application-wide M3 theme setup
+    │   └── Type.kt               # Headings, labels, and paragraph sizes
+    ├── util
+    │   └── ClipboardHelper.kt    # High-productivity copy actions
+    ├── view
+    │   └── MainScreen.kt         # The responsive interface containing Gauges, Forms, and AI lists
+    └── viewmodel
+        └── MatchViewModel.kt     # Manages asynchronous state transitions and presets
+```
+
+---
+
+## ⚙️ 9. AI Match Pipeline & Workflow
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor Recruiter as User / Recruiter
+    participant Screen as UI MainScreen
+    participant VM as MatchViewModel
+    participant Rep as MatchRepository
+    participant AI as Gemini API Service
+    participant DB as SQLite DB (Room)
+
+    Recruiter->>Screen: Enter Job Details & Candidate Profile
+    Recruiter->>Screen: Tap "Smart Match" Button
+    Screen->>VM: Request Match Assessment
+    VM->>VM: Transition state to Loading (Analyzing)
+    VM->>Rep: Execute matchJobAndCandidate(JobText, ResumeText)
+    Rep->>AI: Send Structured Prompt with Resume Context
+    Note over AI: Gemini analyzes suitability, <br/>skills gap, ranks applicant,<br/>and builds questions.
+    AI-->>Rep: Return parsed JSON output
+    Rep->>DB: Persist MatchRecord (Name, Title, Score, JSON, Time)
+    DB-->>Rep: Confirm write success
+    Rep-->>VM: MatchRecord updated state
+    VM->>VM: Set state to Success
+    VM-->>Screen: Render dashboard update
+    Screen-->>Recruiter: Reveal Score Gauge, Stats Cards, and tailored Interview Script!
+```
+
+---
+
+## ⚠️ 10. Current Limitations
+
+*   **Input Method**: The prototype currently relies on copy-pasting text from Resumes/Profiles. Direct `.pdf`, `.docx`, or `.pages` file uploads are not fully implemented.
+*   **API Quota**: Subject to standard Google AI Studio free-tier request rate limitations.
+*   **ATS Sync**: The dashboard maintains a local database but does not connect to enterprise Applicant Tracking Systems (e.g., Workday, Greenhouse) directly.
+
+---
+
+## 🗺️ 11. Project Roadmap
+
+*   [ ] **PDF Parsing Core**: Support direct dragging or choosing of PDF resumes, automatically parsing PDF layouts into plain text in the background.
+*   [ ] **LinkedIn Scanner Integration**: Quick parsing directly via a profile link.
+*   [ ] **Multi-Candidate Board**: Side-by-side comparative charts of up to 4 candidates at once.
+*   [ ] **Team Shared Folders**: Shared database syncing using Firebase to collaborate across multiple hiring managers.
+*   [ ] **Interview Scheduling Integration**: Instantly link specific interview questions to Google Calendar slots.
+
+---
+
+## 🧪 12. Local JVM Testing
+
+You can run automated, non-instrumented JVM Unit and Screen Verification tests directly. No emulator is required:
+
+```bash
+# Run all local JVM unit tests
+./gradlew :app:testDebugUnitTest
+
+# Record visual screenshot baselines (Roborazzi)
+./gradlew :app:recordRoborazziDebug
+
+# Compare current UI against visual baselines
+./gradlew :app:verifyRoborazziDebug
+```
+
+---
+
+## 📄 13. License
+
+```
+MIT License
+
+Copyright (c) 2026 SmartMatch AI Recruitment
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+```

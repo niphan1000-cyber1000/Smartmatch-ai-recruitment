@@ -8,7 +8,7 @@ data class MatchRecord(
     @PrimaryKey(autoGenerate = true) val id: Int = 0,
     val candidateName: String,
     val jobTitle: String,
-    val matchScore: Int,
+    val matchScore: Int?,
     val resumeText: String,
     val jobDescription: String,
     val analysisResult: String,

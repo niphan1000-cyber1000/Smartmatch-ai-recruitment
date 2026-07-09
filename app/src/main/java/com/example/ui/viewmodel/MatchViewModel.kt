@@ -177,9 +177,17 @@ class MatchViewModel(
         }
     }
 
-    private fun extractMatchScore(text: String): Int {
+    private fun extractMatchScore(text: String): Int? {
         try {
-            // Find patterns like "Match Score: 85%" or "**Match Score:** 85%"
+            // 1. Try to find the precise machine-readable comment <!--SCORE:85-->
+            val commentRegex = Regex("<!--SCORE:.*?(\\d+)-->")
+            val commentMatch = commentRegex.find(text)
+            if (commentMatch != null) {
+                val scoreStr = commentMatch.groupValues[1]
+                return scoreStr.toInt().coerceIn(0, 100)
+            }
+
+            // 2. Try to find standard "Match Score: 85" patterns
             val regex = Regex("Match Score:.*?(\\d+)")
             val matchResult = regex.find(text)
             if (matchResult != null) {
@@ -187,16 +195,16 @@ class MatchViewModel(
                 return scoreStr.toInt().coerceIn(0, 100)
             }
 
-            // Fallback: look for any number followed by %
+            // 3. Fallback: look for any percentage number in the response
             val percentRegex = Regex("(\\d+)%")
             val percentMatch = percentRegex.find(text)
             if (percentMatch != null) {
                 return percentMatch.groupValues[1].toInt().coerceIn(0, 100)
             }
         } catch (e: Exception) {
-            // Ignore and fallback
+            // Ignore and return null
         }
-        return (70..92).random() // Realistic fallback score
+        return null // No random fallback, show as indeterminate instead
     }
 
     // Presets for easy testing
