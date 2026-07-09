@@ -6,15 +6,22 @@
 [![Gemini](https://img.shields.io/badge/AI-Google%20Gemini-FF6F00.svg?style=flat-square&logo=google-gemini)](https://ai.google.dev/)
 [![License](https://img.shields.io/badge/License-MIT-blue.svg?style=flat-square)](LICENSE)
 
-An advanced, modern Android recruitment screening application powered by **Google Gemini AI**. **SmartMatch AI Recruitment** enables recruiters and hiring managers to instantly parse, evaluate, and match candidate resumes with job descriptions. The application highlights skill matches, reveals skill gaps, estimates ATS ranking percentages, and automatically compiles tailor-made interview questions—all stored securely in a local SQLite database using **Room** with an elegant, responsive, and tactile **Sleek Interface**.
+An advanced, modern Android recruitment screening assistant powered by **Google Gemini AI**. **SmartMatch AI Recruitment** assists recruiters and hiring managers in analyzing, evaluating, and matching candidate resumes with job descriptions. The application highlights suggested skill matches, identifies potential skill gaps, provides advisory ATS ranking estimates, and automatically compiles tailor-made interview questions—all stored securely in a local SQLite database using **Room** with an elegant, responsive, and tactile **Sleek Interface**.
 
 ---
 
-## 📖 1. Project Overview
+## 📖 1. Project Overview & Status
 
-Finding the right candidate among hundreds of applicants is one of the biggest bottlenecks in modern HR departments. **SmartMatch AI Recruitment** leverages state-of-the-art Generative AI models to analyze the semantic fit between applicant resumes/profiles and specific job requirements. 
+* **Project Status**: 🛠️ **Active Prototype / Development**
+* **Target Audience**: Recruiters, Technical Leads, and Hiring Managers seeking a local advisory screening helper.
 
-Unlike simple keyword matching systems, SmartMatch AI understands the context, project descriptions, and skill levels. It translates complex textual profiles into clear visual dashboard indicators, providing objective recruitment insights in seconds.
+Finding the right candidate among hundreds of applicants is one of the biggest bottlenecks in modern HR departments. **SmartMatch AI Recruitment** leverages state-of-the-art Generative AI models to assist in evaluating the semantic alignment between applicant resumes/profiles and specific job requirements.
+
+Rather than relying purely on rigid keyword-matching tools, SmartMatch AI assists by scanning structural context, projects, and expressed skill depths. It translates complex textual profiles into simple visual dashboard indicators, offering supportive recruitment insights in seconds.
+
+### 🛡️ AI Credibility & Trust Measures
+* **No Simulated Numbers**: If the AI response cannot be parsed for a score percentage, the application strictly refuses to fabricate random "fallback scores." Instead, it gracefully renders the score as **N/A** (Not Available) alongside an explicit qualitative analysis notice to maintain professional trust.
+* **Advisory Design**: The match metrics are presented as **supportive guidelines** to assist human review rather than fully automated hiring decisions.
 
 ---
 
@@ -33,10 +40,14 @@ Unlike simple keyword matching systems, SmartMatch AI understands the context, p
 
 ## 📸 3. Screenshots (Aesthetic Visual Layout)
 
+The application utilizes a spacious **Sleek Layout** modeled around Material Design 3. If you clone or fork this repository, you can capture your own screenshots from the emulator or device and save them in the `assets/screenshots/` folder to populate your GitHub showcase page.
+
 | **1. Dynamic Job & Candidate Entry** | **2. AI Match Dashboard & Gauge** | **3. AI Insights & Custom Questions** |
 | :---: | :---: | :---: |
 | <img src="assets/screenshots/screenshot_entry.png" width="280" alt="Job & Candidate Details Form"/> | <img src="assets/screenshots/screenshot_score.png" width="280" alt="Match Score Gauge"/> | <img src="assets/screenshots/screenshot_insights.png" width="280" alt="AI Analysis Insights"/> |
 | *Easy copy-paste template insertion and instant triggers.* | *Beautiful indigo Sleek circular progress and ATS stats cards.* | *Detailed positive matches, warnings, and tailored interview scripts.* |
+
+> 💡 **Tip for Contributors**: To replace these placeholders, run the app on your device, press `Power + Volume Down` to take screenshots, transfer them to `/assets/screenshots/` using the exact names above, and push them to your repository.
 
 ---
 
@@ -95,13 +106,13 @@ Ensure you have the latest stable version of **Android Studio (Koala/Ladybug or 
 
 ### 1️⃣ Clone the Repository
 ```bash
-git clone https://github.com/your-username/smartmatch-ai-recruitment.git
+git clone https://github.com/niphan1000/smartmatch-ai-recruitment.git
 cd smartmatch-ai-recruitment
 ```
 
 ### 2️⃣ Project Execution (via Android Studio)
 1. Open Android Studio.
-2. Select **File -> Open** and navigate to the cloned `smartmatch-ai-recruitment` directory.
+2. Select **File -> Open** and navigate to the cloned directory.
 3. Allow Gradle to sync dependencies and index the project structure.
 
 ### 3️⃣ Build the APK
@@ -114,11 +125,13 @@ The compiled APK will be generated at:
 
 ---
 
-## ⚙️ 7. Configuration & Environment Secrets
+## ⚙️ 7. Configuration & Security Measures
 
-The application leverages the safe management of development secrets. Sensitive keys are kept out of code logic using **Secrets Gradle Plugin** and `.env` systems.
+The application incorporates strict privacy and secret protection parameters to keep both developer keys and candidate profiles secure.
 
-### 🔐 Adding Your Gemini API Key
+### 🔐 Adding Your Gemini API Key Securely
+To prevent keys from being leaked onto public version control systems (e.g., GitHub), we use the **Secrets Gradle Plugin** which loads parameters from an ignore-listed `.env` file at compile time:
+
 1. Generate an API Key in the [Google AI Studio Console](https://aistudio.google.com/).
 2. In the project root directory, locate the `.env.example` file and rename it to `.env`:
    ```bash
@@ -128,7 +141,12 @@ The application leverages the safe management of development secrets. Sensitive 
    ```env
    GEMINI_API_KEY="your_actual_gemini_api_key_here"
    ```
-4. Gradle will automatically inject the key into `BuildConfig.GEMINI_API_KEY` during compilation.
+4. During Gradle compilation, this value is securely bound into `BuildConfig.GEMINI_API_KEY`.
+
+### 🛡️ PII Protection & Backup Defenses
+Candidate profiles, resumes, and interview responses are highly sensitive, personally identifiable information (PII). 
+* **Disabled Cloud Backups**: In `AndroidManifest.xml`, we configure `android:allowBackup="false"`. This prevents candidate data stored in the local SQLite database from being extracted, synchronised, or backed up automatically through cloud extraction rules.
+* **On-Device Sandbox**: All evaluation records remain strictly confined inside the application sandbox, persisting locally inside the Android Room SQLite layer. No external telemetry or trackers are active.
 
 ---
 
