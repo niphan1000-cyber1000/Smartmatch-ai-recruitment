@@ -146,6 +146,18 @@ Candidate profiles, resumes, and interview responses are highly sensitive, perso
 * **Disabled Cloud Backups**: In `AndroidManifest.xml`, we configure `android:allowBackup="false"`. This prevents candidate data stored in the local SQLite database from being extracted, synchronised, or backed up automatically through cloud extraction rules.
 * **On-Device Sandbox**: All evaluation records remain strictly confined inside the application sandbox, persisting locally inside the Android Room SQLite layer. No external telemetry or trackers are active.
 
+### 🛡️ Production Security & AI Architecture Roadmap
+For production environments, client-side direct API key hosting is highly discouraged. We recommend transitioning to one of the following secure architectures:
+
+1. **AI Backend Proxy Server (Recommended)**
+   * **Structure**: `Android App` ➡️ `Your Private Backend API` (e.g., Express/FastAPI) ➡️ `Gemini API`.
+   * **Advantage**: The Gemini API Key is safely stored as an environment variable entirely on your secure backend. You can apply rate limiting, authorization checks, and audit trails before proxying the requests to Google.
+2. **Firebase Vertex AI SDK & App Check**
+   * **Structure**: `Android App` ➡️ `Vertex AI SDK for Firebase` (with Google Cloud Backend).
+   * **Advantage**: Leverages **Firebase App Check** to verify that incoming API requests are originating from your authentic, unmodified Android application, mitigating abuse and bot requests without manual backend maintenance.
+3. **App Obfuscation (R8/ProGuard)**
+   * During compilation, configure `minifyEnabled true` and `shrinkResources true` inside your production `build.gradle.kts` configuration to apply code-obfuscation, making reverse-engineering decompilation substantially more complex.
+
 ---
 
 ## 📂 8. Project Structure
