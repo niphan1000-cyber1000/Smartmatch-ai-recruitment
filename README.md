@@ -27,27 +27,25 @@ Rather than relying purely on rigid keyword-matching tools, SmartMatch AI assist
 
 ## ✨ 2. Features
 
-*   **📊 Dynamic Match Score Gauge**: A beautifully rendered, tactile custom circular progress gauge that reflects the exact compatibility index of the candidate.
+*   **📊 Dynamic Match Score Gauge**: A beautifully rendered, tactile custom circular progress gauge that reflects the estimated compatibility score of the candidate.
 *   **🔍 Skill Gap Detection**: Instant, color-coded diagnostic summaries showing where the candidate excels and which prerequisites are missing.
 *   **📑 Intelligent Candidate Profile Card**: Real-time generation of custom target role identifiers (`#SDE-XXX`) and live active states for screened candidates.
 *   **💡 AI-Generated Interview Questions**: Custom-tailored behavioral and technical interview questions based directly on the identified skill gaps and experience.
 *   **🗄️ Offline-First Recruiter Dashboard**: Secure local persistence utilizing **Android Room SQLite Database** to store past matches, compare scores, search records, and recall previous analyses instantly.
 *   **📋 Quick-Test Templates**: Pre-loaded mock profiles (e.g., Senior DevOps, Frontend Developer, Mobile Engineer) to test matching performance in a single tap.
-*   **🌐 Real-Time Google Gemini Integration**: Leverages the official Google AI client SDK to conduct secure, server-side semantic analysis.
+*   **🌐 Real-Time Google Gemini Integration**: Leverages the official Google AI client SDK to conduct secure client-side semantic analysis via Google's secure AI infrastructure.
 *   **🎨 Sleek M3 Design Theme**: Fully optimized with edge-to-edge screens, fluid shadows, sleek high-contrast indigo gradients, and accessibility-compliant touch targets.
 
 ---
 
 ## 📸 3. Screenshots (Aesthetic Visual Layout)
 
-The application utilizes a spacious **Sleek Layout** modeled around Material Design 3. If you clone or fork this repository, you can capture your own screenshots from the emulator or device and save them in the `assets/screenshots/` folder to populate your GitHub showcase page.
+The application utilizes a spacious **Sleek Layout** modeled around Material Design 3. Below are high-fidelity design mockups illustrating the visual architecture of the application screens:
 
 | **1. Dynamic Job & Candidate Entry** | **2. AI Match Dashboard & Gauge** | **3. AI Insights & Custom Questions** |
 | :---: | :---: | :---: |
-| <img src="assets/screenshots/screenshot_entry.png" width="280" alt="Job & Candidate Details Form"/> | <img src="assets/screenshots/screenshot_score.png" width="280" alt="Match Score Gauge"/> | <img src="assets/screenshots/screenshot_insights.png" width="280" alt="AI Analysis Insights"/> |
+| <img src="assets/screenshots/screenshot_entry.jpg" width="280" alt="Job & Candidate Details Form"/> | <img src="assets/screenshots/screenshot_score.jpg" width="280" alt="Match Score Gauge"/> | <img src="assets/screenshots/screenshot_insights.jpg" width="280" alt="AI Analysis Insights"/> |
 | *Easy copy-paste template insertion and instant triggers.* | *Beautiful indigo Sleek circular progress and ATS stats cards.* | *Detailed positive matches, warnings, and tailored interview scripts.* |
-
-> 💡 **Tip for Contributors**: To replace these placeholders, run the app on your device, press `Power + Volume Down` to take screenshots, transfer them to `/assets/screenshots/` using the exact names above, and push them to your repository.
 
 ---
 
@@ -91,11 +89,11 @@ graph TD
 ## 🛠️ 5. Tech Stack
 
 *   **Language**: [Kotlin](https://kotlinlang.org) — 100% modern, expressive language.
-*   **UI Framework**: [Jetpack Compose](https://developer.android.com/jetpack/compose) — Declartive UI with Material 3 components.
+*   **UI Framework**: [Jetpack Compose](https://developer.android.com/jetpack/compose) — Declarative UI with Material 3 components.
 *   **Theme**: Material Design 3 (M3) incorporating custom palettes, edge-to-edge drawing (`enableEdgeToEdge()`), and dynamic ripple touch actions.
 *   **Database (Local)**: [Room Database](https://developer.android.com/training/data-storage/room) — Local SQLite ORM with Kotlin Symbol Processing (KSP).
 *   **Concurrency**: [Kotlin Coroutines & Flow](https://kotlinlang.org/docs/coroutines-overview.html) — High-performance reactive state management.
-*   **Generative AI Engine**: [Google Gemini Client SDK](https://ai.google.dev/gpts/docs) — Facilitating prompt engineering, parameter setup, and JSON response parsing.
+*   **Generative AI Engine**: [Google Gemini Client SDK](https://ai.google.dev/gemini-api/docs) — Facilitating prompt engineering, parameter setup, and JSON response parsing.
 *   **Testing Core**: [Robolectric](https://robolectric.org) & [Roborazzi](https://github.com/takahirom/roborazzi) — JVM-based screenshot, UI layout, and viewmodel state verification.
 
 ---
