@@ -48,6 +48,7 @@ import androidx.compose.material.icons.filled.Lightbulb
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Rocket
 import androidx.compose.material.icons.filled.Warning
+import androidx.compose.material.icons.filled.PhotoCamera
 import androidx.compose.material.icons.outlined.History
 import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.outlined.Search
@@ -60,6 +61,10 @@ import androidx.compose.material3.Divider
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.FilledIconButton
+import androidx.compose.material3.IconButtonDefaults
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
@@ -70,6 +75,13 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Tab
 import androidx.compose.material3.TabRow
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import android.graphics.Bitmap
+import android.graphics.ImageDecoder
+import android.net.Uri
+import android.os.Build
+import android.provider.MediaStore
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -204,9 +216,31 @@ fun AnalyzeTab(
     val candidateName by viewModel.candidateName.collectAsState()
     val jobDescription by viewModel.jobDescription.collectAsState()
     val candidateProfile by viewModel.candidateProfile.collectAsState()
+    val isProcessingImage by viewModel.isProcessingImage.collectAsState()
 
+    val context = LocalContext.current
     val scrollState = rememberScrollState()
     var showApiKeyWarning by remember { mutableStateOf(BuildConfig.GEMINI_API_KEY.isEmpty() || BuildConfig.GEMINI_API_KEY == "MY_GEMINI_API_KEY") }
+    var showScanDialog by remember { mutableStateOf(false) }
+
+    val takePhotoLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.TakePicturePreview()
+    ) { bitmap: Bitmap? ->
+        if (bitmap != null) {
+            viewModel.extractCandidateFromImage(bitmap)
+        }
+    }
+
+    val pickImageLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent()
+    ) { uri: Uri? ->
+        if (uri != null) {
+            val bitmap = uriToBitmap(context, uri)
+            if (bitmap != null) {
+                viewModel.extractCandidateFromImage(bitmap)
+            }
+        }
+    }
 
     Column(
         modifier = Modifier
@@ -304,12 +338,63 @@ fun AnalyzeTab(
                     .padding(20.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                Text(
-                    text = "ข้อมูลความต้องการและผู้สมัคร (ATS Details)",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold,
-                    color = Color(0xFF1A1C1E)
-                )
+            Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "ข้อมูลความต้องการและผู้สมัคร (ATS Details)",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = Color(0xFF1A1C1E)
+                    )
+
+                    // Camera Scanner Action Button
+                    Button(
+                        onClick = { showScanDialog = true },
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = Color(0xFF4F46E5), // Indigo accent
+                            contentColor = Color.White
+                        ),
+                        contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 12.dp, vertical = 6.dp),
+                        modifier = Modifier.height(36.dp),
+                        shape = RoundedCornerShape(12.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Filled.PhotoCamera,
+                            contentDescription = "สแกนด้วยกล้อง",
+                            modifier = Modifier.size(16.dp)
+                        )
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text("สแกนเอกสาร", fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                    }
+                }
+
+                if (isProcessingImage) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(RoundedCornerShape(12.dp))
+                            .background(Color(0xFFEEF2FF))
+                            .border(1.dp, Color(0xFFC7D2FE), RoundedCornerShape(12.dp))
+                            .padding(12.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(20.dp),
+                            strokeWidth = 2.5.dp,
+                            color = Color(0xFF4F46E5)
+                        )
+                        Spacer(modifier = Modifier.width(12.dp))
+                        Text(
+                            text = "กำลังอ่านข้อมูลจากรูปภาพด้วย AI... กรุณารอสักครู่",
+                            color = Color(0xFF3730A3),
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Medium
+                        )
+                    }
+                }
 
                 // Candidate Name
                 OutlinedTextField(
@@ -321,8 +406,14 @@ fun AnalyzeTab(
                     modifier = Modifier.fillMaxWidth().testTag("candidate_name_input"),
                     shape = RoundedCornerShape(14.dp),
                     colors = OutlinedTextFieldDefaults.colors(
+                        focusedTextColor = Color(0xFF0F172A),
+                        unfocusedTextColor = Color(0xFF1E293B),
+                        focusedLabelColor = MaterialTheme.colorScheme.primary,
+                        unfocusedLabelColor = Color(0xFF475569),
                         focusedBorderColor = MaterialTheme.colorScheme.primary,
-                        unfocusedBorderColor = Color(0xFFE4E4E7)
+                        unfocusedBorderColor = Color(0xFF94A3B8),
+                        focusedContainerColor = Color.White,
+                        unfocusedContainerColor = Color.White
                     )
                 )
 
@@ -336,8 +427,14 @@ fun AnalyzeTab(
                     modifier = Modifier.fillMaxWidth().testTag("job_title_input"),
                     shape = RoundedCornerShape(14.dp),
                     colors = OutlinedTextFieldDefaults.colors(
+                        focusedTextColor = Color(0xFF0F172A),
+                        unfocusedTextColor = Color(0xFF1E293B),
+                        focusedLabelColor = MaterialTheme.colorScheme.primary,
+                        unfocusedLabelColor = Color(0xFF475569),
                         focusedBorderColor = MaterialTheme.colorScheme.primary,
-                        unfocusedBorderColor = Color(0xFFE4E4E7)
+                        unfocusedBorderColor = Color(0xFF94A3B8),
+                        focusedContainerColor = Color.White,
+                        unfocusedContainerColor = Color.White
                     )
                 )
 
@@ -353,8 +450,14 @@ fun AnalyzeTab(
                         .testTag("job_desc_input"),
                     shape = RoundedCornerShape(14.dp),
                     colors = OutlinedTextFieldDefaults.colors(
+                        focusedTextColor = Color(0xFF0F172A),
+                        unfocusedTextColor = Color(0xFF1E293B),
+                        focusedLabelColor = MaterialTheme.colorScheme.primary,
+                        unfocusedLabelColor = Color(0xFF475569),
                         focusedBorderColor = MaterialTheme.colorScheme.primary,
-                        unfocusedBorderColor = Color(0xFFE4E4E7)
+                        unfocusedBorderColor = Color(0xFF94A3B8),
+                        focusedContainerColor = Color.White,
+                        unfocusedContainerColor = Color.White
                     )
                 )
 
@@ -370,8 +473,14 @@ fun AnalyzeTab(
                         .testTag("candidate_profile_input"),
                     shape = RoundedCornerShape(14.dp),
                     colors = OutlinedTextFieldDefaults.colors(
+                        focusedTextColor = Color(0xFF0F172A),
+                        unfocusedTextColor = Color(0xFF1E293B),
+                        focusedLabelColor = MaterialTheme.colorScheme.primary,
+                        unfocusedLabelColor = Color(0xFF475569),
                         focusedBorderColor = MaterialTheme.colorScheme.primary,
-                        unfocusedBorderColor = Color(0xFFE4E4E7)
+                        unfocusedBorderColor = Color(0xFF94A3B8),
+                        focusedContainerColor = Color.White,
+                        unfocusedContainerColor = Color.White
                     )
                 )
 
@@ -433,6 +542,47 @@ fun AnalyzeTab(
                     }
                 }
             }
+        }
+
+        if (showScanDialog) {
+            AlertDialog(
+                onDismissRequest = { showScanDialog = false },
+                title = {
+                    Text(
+                        "สแกนเอกสารด้วย AI Scanner",
+                        fontWeight = FontWeight.Bold,
+                        color = Color(0xFF0F172A)
+                    )
+                },
+                text = {
+                    Text(
+                        "กรุณาเลือกวิธีการอัปโหลดรูปภาพใบเซอร์, ใบเกรด หรือเรซูเม่ เพื่อให้ AI วิเคราะห์ข้อมูลและกรอกฟอร์มโดยอัตโนมัติ",
+                        color = Color(0xFF334155)
+                    )
+                },
+                confirmButton = {
+                    Button(
+                        onClick = {
+                            showScanDialog = false
+                            takePhotoLauncher.launch(null)
+                        },
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4F46E5))
+                    ) {
+                        Text("ถ่ายภาพใหม่ (Camera)")
+                    }
+                },
+                dismissButton = {
+                    OutlinedButton(
+                        onClick = {
+                            showScanDialog = false
+                            pickImageLauncher.launch("image/*")
+                        },
+                        border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFCBD5E1))
+                    ) {
+                        Text("เลือกรูปจากเครื่อง (Gallery)")
+                    }
+                }
+            )
         }
 
         Spacer(modifier = Modifier.height(24.dp))
@@ -1168,6 +1318,12 @@ fun HistoryTab(
                 .testTag("search_history_input"),
             shape = RoundedCornerShape(12.dp),
             colors = OutlinedTextFieldDefaults.colors(
+                focusedTextColor = Color(0xFF0F172A),
+                unfocusedTextColor = Color(0xFF1E293B),
+                focusedLabelColor = MaterialTheme.colorScheme.primary,
+                unfocusedLabelColor = Color(0xFF475569),
+                focusedBorderColor = MaterialTheme.colorScheme.primary,
+                unfocusedBorderColor = Color(0xFF94A3B8),
                 focusedContainerColor = MaterialTheme.colorScheme.surface,
                 unfocusedContainerColor = MaterialTheme.colorScheme.surface
             )
@@ -1390,13 +1546,30 @@ fun AboutGuideItem(title: String, description: String) {
             text = title,
             style = MaterialTheme.typography.titleSmall,
             fontWeight = FontWeight.Bold,
-            color = MaterialTheme.colorScheme.secondary
+            color = Color(0xFF1E1B4B) // Dark indigo
         )
         Text(
             text = description,
             style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.8f),
+            color = Color(0xFF334155), // Dark slate gray (High contrast)
             lineHeight = 22.sp
         )
+    }
+}
+
+fun uriToBitmap(context: android.content.Context, uri: Uri): Bitmap? {
+    return try {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+            val source = ImageDecoder.createSource(context.contentResolver, uri)
+            ImageDecoder.decodeBitmap(source) { decoder, _, _ ->
+                decoder.allocator = ImageDecoder.ALLOCATOR_SOFTWARE
+            }
+        } else {
+            @Suppress("DEPRECATION")
+            MediaStore.Images.Media.getBitmap(context.contentResolver, uri)
+        }
+    } catch (e: Exception) {
+        e.printStackTrace()
+        null
     }
 }

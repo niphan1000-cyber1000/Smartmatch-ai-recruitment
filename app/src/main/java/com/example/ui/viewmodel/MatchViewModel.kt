@@ -38,6 +38,9 @@ class MatchViewModel(
     private val _isAnalyzing = MutableStateFlow(false)
     val isAnalyzing = _isAnalyzing.asStateFlow()
 
+    private val _isProcessingImage = MutableStateFlow(false)
+    val isProcessingImage = _isProcessingImage.asStateFlow()
+
     private val _errorMessage = MutableStateFlow<String?>(null)
     val errorMessage = _errorMessage.asStateFlow()
 
@@ -371,6 +374,68 @@ class MatchViewModel(
         _currentAnalysisResult.value = null
         _currentMatchScore.value = null
         _selectedRecord.value = null
+    }
+
+    fun extractCandidateFromImage(bitmap: android.graphics.Bitmap) {
+        val apiKey = BuildConfig.GEMINI_API_KEY
+        if (apiKey.isEmpty() || apiKey == "MY_GEMINI_API_KEY") {
+            _errorMessage.value = "Gemini API Key is not set or invalid. Please configure it in the Secrets panel in AI Studio."
+            return
+        }
+
+        _isProcessingImage.value = true
+        _errorMessage.value = null
+
+        viewModelScope.launch {
+            try {
+                // Resize and convert bitmap to base64
+                val base64 = bitmapToBase64(bitmap)
+                
+                // Call repository
+                val extractedText = repository.extractCandidateFromImage(apiKey, base64)
+                
+                // Parse Candidate Name from the text (best effort)
+                val lines = extractedText.lines()
+                var parsedName = ""
+                for (line in lines.take(15)) {
+                    val clean = line.replace(Regex("[#*`_\\-]"), "").trim()
+                    if (clean.startsWith("Name:", ignoreCase = true) || clean.startsWith("ชื่อ:", ignoreCase = true)) {
+                        parsedName = clean.substringAfter(":").trim()
+                        break
+                    }
+                    if (clean.isNotEmpty() && parsedName.isEmpty() && !clean.contains("resume", ignoreCase = true) && !clean.contains("profile", ignoreCase = true) && clean.split(" ").size in 2..4) {
+                        parsedName = clean
+                    }
+                }
+                
+                if (parsedName.isNotEmpty()) {
+                    _candidateName.value = parsedName
+                }
+                _candidateProfile.value = extractedText
+                
+            } catch (e: Exception) {
+                _errorMessage.value = "Image Parsing Failed: ${e.message ?: "Unknown error"}"
+            } finally {
+                _isProcessingImage.value = false
+            }
+        }
+    }
+
+    private fun bitmapToBase64(bitmap: android.graphics.Bitmap, maxSize: Int = 1024): String {
+        val scaledBitmap = if (bitmap.width > maxSize || bitmap.height > maxSize) {
+            val aspectRatio = bitmap.width.toFloat() / bitmap.height.toFloat()
+            val (newWidth, newHeight) = if (aspectRatio > 1) {
+                maxSize to (maxSize / aspectRatio).toInt()
+            } else {
+                (maxSize * aspectRatio).toInt() to maxSize
+            }
+            android.graphics.Bitmap.createScaledBitmap(bitmap, newWidth, newHeight, true)
+        } else {
+            bitmap
+        }
+        val outputStream = java.io.ByteArrayOutputStream()
+        scaledBitmap.compress(android.graphics.Bitmap.CompressFormat.JPEG, 80, outputStream)
+        return android.util.Base64.encodeToString(outputStream.toByteArray(), android.util.Base64.NO_WRAP)
     }
 }
 

@@ -3,6 +3,7 @@ package com.example.data.repository
 import com.example.data.api.GenerateContentRequest
 import com.example.data.api.Content
 import com.example.data.api.Part
+import com.example.data.api.InlineData
 import com.example.data.api.GenerationConfig
 import com.example.data.api.RetrofitClient
 import com.example.data.local.MatchRecordDao
@@ -81,6 +82,42 @@ class MatchRepository(private val matchRecordDao: MatchRecordDao) {
             contents = listOf(Content(parts = listOf(Part(text = prompt)))),
             systemInstruction = Content(parts = listOf(Part(text = systemPrompt))),
             generationConfig = GenerationConfig(temperature = 0.2f)
+        )
+
+        val response = RetrofitClient.service.generateContent(apiKey, request)
+        val textResponse = response.candidates?.firstOrNull()?.content?.parts?.firstOrNull()?.text
+        if (textResponse != null) {
+            return textResponse
+        } else {
+            throw Exception("Received an empty response from Gemini API.")
+        }
+    }
+
+    suspend fun extractCandidateFromImage(
+        apiKey: String,
+        base64Image: String,
+        mimeType: String = "image/jpeg"
+    ): String {
+        val prompt = """
+            Analyze the provided document image (which could be a resume, certificate, transcript, or candidate profile).
+            Extract all relevant candidate details and format it as a professional Resume/Profile in plain text.
+            Include:
+            - Full Name
+            - Contact Info (if visible)
+            - Education / Grades (if visible)
+            - Professional Experience (if visible)
+            - Skills & Core Technologies (if visible)
+            - Certifications (if visible)
+            
+            Strictly return ONLY the extracted information formatted in clean Markdown. Do NOT include any intro, outro, conversational fillers, or explanations. Just start directly with the candidate's name or title.
+        """.trimIndent()
+
+        val request = GenerateContentRequest(
+            contents = listOf(Content(parts = listOf(
+                Part(text = prompt),
+                Part(inlineData = InlineData(mimeType = mimeType, data = base64Image))
+            ))),
+            generationConfig = GenerationConfig(temperature = 0.1f)
         )
 
         val response = RetrofitClient.service.generateContent(apiKey, request)

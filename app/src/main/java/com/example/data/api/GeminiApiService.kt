@@ -24,7 +24,14 @@ data class Content(
 
 @JsonClass(generateAdapter = true)
 data class Part(
-    val text: String
+    val text: String? = null,
+    val inlineData: InlineData? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class InlineData(
+    val mimeType: String,
+    val data: String
 )
 
 @JsonClass(generateAdapter = true)
