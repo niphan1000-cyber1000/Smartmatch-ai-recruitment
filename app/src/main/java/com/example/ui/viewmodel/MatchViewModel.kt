@@ -38,8 +38,11 @@ class MatchViewModel(
     private val _isAnalyzing = MutableStateFlow(false)
     val isAnalyzing = _isAnalyzing.asStateFlow()
 
-    private val _isProcessingImage = MutableStateFlow(false)
-    val isProcessingImage = _isProcessingImage.asStateFlow()
+    private val _isProcessingJobImage = MutableStateFlow(false)
+    val isProcessingJobImage = _isProcessingJobImage.asStateFlow()
+
+    private val _isProcessingCandidateImage = MutableStateFlow(false)
+    val isProcessingCandidateImage = _isProcessingCandidateImage.asStateFlow()
 
     private val _errorMessage = MutableStateFlow<String?>(null)
     val errorMessage = _errorMessage.asStateFlow()
@@ -377,22 +380,27 @@ class MatchViewModel(
     }
 
     fun extractCandidateFromImage(bitmap: android.graphics.Bitmap) {
+        extractCandidateFromImages(listOf(bitmap))
+    }
+
+    fun extractCandidateFromImages(bitmaps: List<android.graphics.Bitmap>) {
+        if (bitmaps.isEmpty()) return
         val apiKey = BuildConfig.GEMINI_API_KEY
         if (apiKey.isEmpty() || apiKey == "MY_GEMINI_API_KEY") {
             _errorMessage.value = "Gemini API Key is not set or invalid. Please configure it in the Secrets panel in AI Studio."
             return
         }
 
-        _isProcessingImage.value = true
+        _isProcessingCandidateImage.value = true
         _errorMessage.value = null
 
         viewModelScope.launch {
             try {
-                // Resize and convert bitmap to base64
-                val base64 = bitmapToBase64(bitmap)
+                // Resize and convert bitmaps to base64
+                val base64List = bitmaps.map { bitmapToBase64(it) }
                 
                 // Call repository
-                val extractedText = repository.extractCandidateFromImage(apiKey, base64)
+                val extractedText = repository.extractCandidateFromMultipleImages(apiKey, base64List)
                 
                 // Parse Candidate Name from the text (best effort)
                 val lines = extractedText.lines()
@@ -416,7 +424,53 @@ class MatchViewModel(
             } catch (e: Exception) {
                 _errorMessage.value = "Image Parsing Failed: ${e.message ?: "Unknown error"}"
             } finally {
-                _isProcessingImage.value = false
+                _isProcessingCandidateImage.value = false
+            }
+        }
+    }
+
+    fun extractJobFromImages(bitmaps: List<android.graphics.Bitmap>) {
+        if (bitmaps.isEmpty()) return
+        val apiKey = BuildConfig.GEMINI_API_KEY
+        if (apiKey.isEmpty() || apiKey == "MY_GEMINI_API_KEY") {
+            _errorMessage.value = "Gemini API Key is not set or invalid. Please configure it in the Secrets panel in AI Studio."
+            return
+        }
+
+        _isProcessingJobImage.value = true
+        _errorMessage.value = null
+
+        viewModelScope.launch {
+            try {
+                // Resize and convert bitmaps to base64
+                val base64List = bitmaps.map { bitmapToBase64(it) }
+                
+                // Call repository
+                val extractedText = repository.extractJobFromMultipleImages(apiKey, base64List)
+                
+                // Parse Job Title from the text (best effort)
+                val lines = extractedText.lines()
+                var parsedTitle = ""
+                for (line in lines.take(15)) {
+                    val clean = line.replace(Regex("[#*`_\\-]"), "").trim()
+                    if (clean.startsWith("Job Title:", ignoreCase = true) || 
+                        clean.startsWith("Title:", ignoreCase = true) || 
+                        clean.startsWith("ตำแหน่ง:", ignoreCase = true) || 
+                        clean.startsWith("ชื่อตำแหน่ง:", ignoreCase = true)) {
+                        parsedTitle = clean.substringAfter(":").trim()
+                        break
+                    }
+                }
+                
+                if (parsedTitle.isNotEmpty()) {
+                    _jobTitle.value = parsedTitle
+                }
+                _jobDescription.value = extractedText
+                
+            } catch (e: Exception) {
+                _errorMessage.value = "Image Parsing Failed: ${e.message ?: "Unknown error"}"
+            } finally {
+                _isProcessingJobImage.value = false
             }
         }
     }

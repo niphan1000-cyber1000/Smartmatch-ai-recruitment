@@ -98,9 +98,17 @@ class MatchRepository(private val matchRecordDao: MatchRecordDao) {
         base64Image: String,
         mimeType: String = "image/jpeg"
     ): String {
+        return extractCandidateFromMultipleImages(apiKey, listOf(base64Image), mimeType)
+    }
+
+    suspend fun extractCandidateFromMultipleImages(
+        apiKey: String,
+        base64Images: List<String>,
+        mimeType: String = "image/jpeg"
+    ): String {
         val prompt = """
-            Analyze the provided document image (which could be a resume, certificate, transcript, or candidate profile).
-            Extract all relevant candidate details and format it as a professional Resume/Profile in plain text.
+            Analyze the provided document images in sequential order (which represent the pages of a candidate's resume, CV, transcript, certificates, or profile).
+            Extract and compile all relevant candidate details and format them as a cohesive, professional, and well-organized Resume/Profile in plain text.
             Include:
             - Full Name
             - Contact Info (if visible)
@@ -109,14 +117,55 @@ class MatchRepository(private val matchRecordDao: MatchRecordDao) {
             - Skills & Core Technologies (if visible)
             - Certifications (if visible)
             
-            Strictly return ONLY the extracted information formatted in clean Markdown. Do NOT include any intro, outro, conversational fillers, or explanations. Just start directly with the candidate's name or title.
+            Strictly return ONLY the extracted information formatted in clean, standard Markdown. Do NOT include any intro, outro, conversational fillers, or explanations. Just start directly with the candidate's name or title. Ensure the content from all pages flows continuously and is merged beautifully into one cohesive document.
         """.trimIndent()
 
+        val parts = mutableListOf<Part>()
+        parts.add(Part(text = prompt))
+        for (base64Image in base64Images) {
+            parts.add(Part(inlineData = InlineData(mimeType = mimeType, data = base64Image)))
+        }
+
         val request = GenerateContentRequest(
-            contents = listOf(Content(parts = listOf(
-                Part(text = prompt),
-                Part(inlineData = InlineData(mimeType = mimeType, data = base64Image))
-            ))),
+            contents = listOf(Content(parts = parts)),
+            generationConfig = GenerationConfig(temperature = 0.1f)
+        )
+
+        val response = RetrofitClient.service.generateContent(apiKey, request)
+        val textResponse = response.candidates?.firstOrNull()?.content?.parts?.firstOrNull()?.text
+        if (textResponse != null) {
+            return textResponse
+        } else {
+            throw Exception("Received an empty response from Gemini API.")
+        }
+    }
+
+    suspend fun extractJobFromMultipleImages(
+        apiKey: String,
+        base64Images: List<String>,
+        mimeType: String = "image/jpeg"
+    ): String {
+        val prompt = """
+            Analyze the provided document images in sequential order (which represent the pages of a Job Description, job advertisement, or position qualifications).
+            Extract and compile the detailed job description, qualifications, and core requirements. Combine and arrange them neatly in a continuous order.
+            Include:
+            - Job Title
+            - Department / Team (if visible)
+            - Key Responsibilities
+            - Required Technical Skills & Qualifications
+            - Soft Skills & Optional/Preferred Skills
+            
+            Strictly return ONLY the compiled information formatted in clean, standard Markdown. Do NOT include any intro, outro, conversational fillers, or explanations. Just start directly with the job title or department. Ensure the content from all pages flows continuously and is merged beautifully into one cohesive description.
+        """.trimIndent()
+
+        val parts = mutableListOf<Part>()
+        parts.add(Part(text = prompt))
+        for (base64Image in base64Images) {
+            parts.add(Part(inlineData = InlineData(mimeType = mimeType, data = base64Image)))
+        }
+
+        val request = GenerateContentRequest(
+            contents = listOf(Content(parts = parts)),
             generationConfig = GenerationConfig(temperature = 0.1f)
         )
 

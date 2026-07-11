@@ -49,6 +49,8 @@ import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Rocket
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material.icons.filled.PhotoCamera
+import androidx.compose.material.icons.filled.Collections
+import androidx.compose.material.icons.filled.Image
 import androidx.compose.material.icons.outlined.History
 import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.outlined.Search
@@ -216,29 +218,40 @@ fun AnalyzeTab(
     val candidateName by viewModel.candidateName.collectAsState()
     val jobDescription by viewModel.jobDescription.collectAsState()
     val candidateProfile by viewModel.candidateProfile.collectAsState()
-    val isProcessingImage by viewModel.isProcessingImage.collectAsState()
+    val isProcessingJobImage by viewModel.isProcessingJobImage.collectAsState()
+    val isProcessingCandidateImage by viewModel.isProcessingCandidateImage.collectAsState()
 
     val context = LocalContext.current
     val scrollState = rememberScrollState()
     var showApiKeyWarning by remember { mutableStateOf(BuildConfig.GEMINI_API_KEY.isEmpty() || BuildConfig.GEMINI_API_KEY == "MY_GEMINI_API_KEY") }
-    var showScanDialog by remember { mutableStateOf(false) }
 
-    val takePhotoLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.TakePicturePreview()
-    ) { bitmap: Bitmap? ->
-        if (bitmap != null) {
-            viewModel.extractCandidateFromImage(bitmap)
+    val pickMultipleJobImagesLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetMultipleContents()
+    ) { uris: List<Uri> ->
+        if (uris.isNotEmpty()) {
+            val bitmaps = uris.mapNotNull { uriToBitmap(context, it) }
+            if (bitmaps.isNotEmpty()) {
+                viewModel.extractJobFromImages(bitmaps)
+            }
         }
     }
 
-    val pickImageLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.GetContent()
-    ) { uri: Uri? ->
-        if (uri != null) {
-            val bitmap = uriToBitmap(context, uri)
-            if (bitmap != null) {
-                viewModel.extractCandidateFromImage(bitmap)
+    val pickMultipleCandidateImagesLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetMultipleContents()
+    ) { uris: List<Uri> ->
+        if (uris.isNotEmpty()) {
+            val bitmaps = uris.mapNotNull { uriToBitmap(context, it) }
+            if (bitmaps.isNotEmpty()) {
+                viewModel.extractCandidateFromImages(bitmaps)
             }
+        }
+    }
+
+    val takeCandidatePhotoLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.TakePicturePreview()
+    ) { bitmap: Bitmap? ->
+        if (bitmap != null) {
+            viewModel.extractCandidateFromImages(listOf(bitmap))
         }
     }
 
@@ -259,69 +272,6 @@ fun AnalyzeTab(
 
         Spacer(modifier = Modifier.height(12.dp))
 
-        // Presets card (Sleek Theme style)
-        Card(
-            modifier = Modifier
-                .fillMaxWidth()
-                .widthIn(max = 600.dp)
-                .shadow(1.dp, RoundedCornerShape(16.dp))
-                .border(1.dp, Color(0xFFF1F5F9), RoundedCornerShape(16.dp)),
-            colors = CardDefaults.cardColors(containerColor = Color.White),
-            shape = RoundedCornerShape(16.dp)
-        ) {
-            Column(modifier = Modifier.padding(16.dp)) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Icon(
-                        Icons.Filled.AutoAwesome,
-                        contentDescription = "Templates",
-                        tint = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.size(18.dp)
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text(
-                        text = "แม่แบบทดสอบทันที (Quick Templates)",
-                        fontWeight = FontWeight.Bold,
-                        style = MaterialTheme.typography.titleSmall,
-                        color = Color(0xFF1A1C1E)
-                    )
-                }
-                Spacer(modifier = Modifier.height(10.dp))
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    viewModel.presetJobs.forEachIndexed { index, job ->
-                        val candidate = viewModel.presetCandidates.getOrNull(index) ?: viewModel.presetCandidates[0]
-                        OutlinedButton(
-                            onClick = {
-                                viewModel.applyPreset(index, index)
-                            },
-                            modifier = Modifier.weight(1f),
-                            shape = RoundedCornerShape(10.dp),
-                            border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFEEF2FF)),
-                            colors = ButtonDefaults.outlinedButtonColors(
-                                contentColor = MaterialTheme.colorScheme.primary,
-                                containerColor = Color(0xFFF8F9FF)
-                            )
-                        ) {
-                            Text(
-                                text = job.title.substringBefore(" (").substringBefore(" Developer").substringBefore(" Engineer"),
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis,
-                                fontSize = 11.sp,
-                                fontWeight = FontWeight.Bold
-                            )
-                        }
-                    }
-                }
-            }
-        }
-
-        Spacer(modifier = Modifier.height(16.dp))
-
         // Form Fields (Sleek Theme style)
         Card(
             modifier = Modifier
@@ -338,9 +288,9 @@ fun AnalyzeTab(
                     .padding(20.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-            Row(
+                Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
+                    horizontalArrangement = Arrangement.Start,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
@@ -349,51 +299,6 @@ fun AnalyzeTab(
                         fontWeight = FontWeight.Bold,
                         color = Color(0xFF1A1C1E)
                     )
-
-                    // Camera Scanner Action Button
-                    Button(
-                        onClick = { showScanDialog = true },
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = Color(0xFF4F46E5), // Indigo accent
-                            contentColor = Color.White
-                        ),
-                        contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 12.dp, vertical = 6.dp),
-                        modifier = Modifier.height(36.dp),
-                        shape = RoundedCornerShape(12.dp)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Filled.PhotoCamera,
-                            contentDescription = "สแกนด้วยกล้อง",
-                            modifier = Modifier.size(16.dp)
-                        )
-                        Spacer(modifier = Modifier.width(6.dp))
-                        Text("สแกนเอกสาร", fontSize = 12.sp, fontWeight = FontWeight.Bold)
-                    }
-                }
-
-                if (isProcessingImage) {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clip(RoundedCornerShape(12.dp))
-                            .background(Color(0xFFEEF2FF))
-                            .border(1.dp, Color(0xFFC7D2FE), RoundedCornerShape(12.dp))
-                            .padding(12.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        CircularProgressIndicator(
-                            modifier = Modifier.size(20.dp),
-                            strokeWidth = 2.5.dp,
-                            color = Color(0xFF4F46E5)
-                        )
-                        Spacer(modifier = Modifier.width(12.dp))
-                        Text(
-                            text = "กำลังอ่านข้อมูลจากรูปภาพด้วย AI... กรุณารอสักครู่",
-                            color = Color(0xFF3730A3),
-                            fontSize = 12.sp,
-                            fontWeight = FontWeight.Medium
-                        )
-                    }
                 }
 
                 // Candidate Name
@@ -438,51 +343,204 @@ fun AnalyzeTab(
                     )
                 )
 
-                // Job Description
-                OutlinedTextField(
-                    value = jobDescription,
-                    onValueChange = { viewModel.updateJobDescription(it) },
-                    label = { Text("รายละเอียดตําแหน่งงาน (Job Description)") },
-                    placeholder = { Text("ระบุคุณสมบัติ ทักษะ และประสบการณ์ที่ต้องการ...") },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(130.dp)
-                        .testTag("job_desc_input"),
-                    shape = RoundedCornerShape(14.dp),
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedTextColor = Color(0xFF0F172A),
-                        unfocusedTextColor = Color(0xFF1E293B),
-                        focusedLabelColor = MaterialTheme.colorScheme.primary,
-                        unfocusedLabelColor = Color(0xFF475569),
-                        focusedBorderColor = MaterialTheme.colorScheme.primary,
-                        unfocusedBorderColor = Color(0xFF94A3B8),
-                        focusedContainerColor = Color.White,
-                        unfocusedContainerColor = Color.White
-                    )
-                )
+                // Job Description Section with dedicated upload button
+                Column(
+                    verticalArrangement = Arrangement.spacedBy(6.dp),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = "รายละเอียดตําแหน่งงาน (Job Description)",
+                            style = MaterialTheme.typography.bodyMedium,
+                            fontWeight = FontWeight.SemiBold,
+                            color = Color(0xFF334155)
+                        )
 
-                // Candidate Profile / Resume / GitHub Info
-                OutlinedTextField(
-                    value = candidateProfile,
-                    onValueChange = { viewModel.updateCandidateProfile(it) },
-                    label = { Text("เรซูเม่ / ผลงานผู้สมัคร (Candidate Resume)") },
-                    placeholder = { Text("วางข้อความในเรซูเม่ หรือโปรเจกต์เด่นเพื่อวิเคราะห์...") },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(180.dp)
-                        .testTag("candidate_profile_input"),
-                    shape = RoundedCornerShape(14.dp),
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedTextColor = Color(0xFF0F172A),
-                        unfocusedTextColor = Color(0xFF1E293B),
-                        focusedLabelColor = MaterialTheme.colorScheme.primary,
-                        unfocusedLabelColor = Color(0xFF475569),
-                        focusedBorderColor = MaterialTheme.colorScheme.primary,
-                        unfocusedBorderColor = Color(0xFF94A3B8),
-                        focusedContainerColor = Color.White,
-                        unfocusedContainerColor = Color.White
+                        Button(
+                            onClick = { pickMultipleJobImagesLauncher.launch("image/*") },
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = Color(0xFF4F46E5),
+                                contentColor = Color.White
+                            ),
+                            shape = RoundedCornerShape(10.dp),
+                            contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 10.dp, vertical = 4.dp),
+                            modifier = Modifier.height(30.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Filled.Collections,
+                                contentDescription = "เลือกไฟล์รูปภาพ",
+                                modifier = Modifier.size(14.dp)
+                            )
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text("เลือกไฟล์รูปภาพ", fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                        }
+                    }
+
+                    OutlinedTextField(
+                        value = jobDescription,
+                        onValueChange = { viewModel.updateJobDescription(it) },
+                        placeholder = { Text("ระบุคุณสมบัติ ทักษะ และประสบการณ์ที่ต้องการ หรืออัปโหลดรูปภาพใบรายละเอียดงานด้านบน...") },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(130.dp)
+                            .testTag("job_desc_input"),
+                        shape = RoundedCornerShape(14.dp),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedTextColor = Color(0xFF0F172A),
+                            unfocusedTextColor = Color(0xFF1E293B),
+                            focusedLabelColor = MaterialTheme.colorScheme.primary,
+                            unfocusedLabelColor = Color(0xFF475569),
+                            focusedBorderColor = MaterialTheme.colorScheme.primary,
+                            unfocusedBorderColor = Color(0xFF94A3B8),
+                            focusedContainerColor = Color.White,
+                            unfocusedContainerColor = Color.White
+                        )
                     )
-                )
+
+                    AnimatedVisibility(
+                        visible = isProcessingJobImage,
+                        enter = fadeIn() + expandVertically(),
+                        exit = fadeOut() + shrinkVertically()
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clip(RoundedCornerShape(12.dp))
+                                .background(Color(0xFFEEF2FF))
+                                .border(1.dp, Color(0xFFC7D2FE), RoundedCornerShape(12.dp))
+                                .padding(10.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(16.dp),
+                                strokeWidth = 2.dp,
+                                color = Color(0xFF4F46E5)
+                            )
+                            Spacer(modifier = Modifier.width(10.dp))
+                            Text(
+                                text = "AI กำลังอ่านและเรียงลำดับคำอธิบายงาน... กรุณารอสักครู่",
+                                color = Color(0xFF3730A3),
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.Medium
+                            )
+                        }
+                    }
+                }
+
+                // Candidate Profile / Resume Section with dedicated upload buttons
+                Column(
+                    verticalArrangement = Arrangement.spacedBy(6.dp),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = "เรซูเม่ / ผลงานผู้สมัคร (Candidate Resume)",
+                            style = MaterialTheme.typography.bodyMedium,
+                            fontWeight = FontWeight.SemiBold,
+                            color = Color(0xFF334155)
+                        )
+
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(6.dp)
+                        ) {
+                            Button(
+                                onClick = { takeCandidatePhotoLauncher.launch(null) },
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = Color(0xFF0EA5E9),
+                                    contentColor = Color.White
+                                ),
+                                shape = RoundedCornerShape(10.dp),
+                                contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 10.dp, vertical = 4.dp),
+                                modifier = Modifier.height(30.dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Filled.PhotoCamera,
+                                    contentDescription = "ถ่ายรูป",
+                                    modifier = Modifier.size(14.dp)
+                                )
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Text("ถ่ายรูป", fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                            }
+
+                            Button(
+                                onClick = { pickMultipleCandidateImagesLauncher.launch("image/*") },
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = Color(0xFF4F46E5),
+                                    contentColor = Color.White
+                                ),
+                                shape = RoundedCornerShape(10.dp),
+                                contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 10.dp, vertical = 4.dp),
+                                modifier = Modifier.height(30.dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Filled.Collections,
+                                    contentDescription = "เลือกหลายรูป",
+                                    modifier = Modifier.size(14.dp)
+                                )
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Text("เลือกหลายรูป", fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                            }
+                        }
+                    }
+
+                    OutlinedTextField(
+                        value = candidateProfile,
+                        onValueChange = { viewModel.updateCandidateProfile(it) },
+                        placeholder = { Text("วางข้อความ หรืออัปโหลดรูปภาพเรซูเม่ ผลงาน ใบเซอร์ เพื่อให้ AI เรียงลำดับและจัดรูปแบบให้...") },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(180.dp)
+                            .testTag("candidate_profile_input"),
+                        shape = RoundedCornerShape(14.dp),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedTextColor = Color(0xFF0F172A),
+                            unfocusedTextColor = Color(0xFF1E293B),
+                            focusedLabelColor = MaterialTheme.colorScheme.primary,
+                            unfocusedLabelColor = Color(0xFF475569),
+                            focusedBorderColor = MaterialTheme.colorScheme.primary,
+                            unfocusedBorderColor = Color(0xFF94A3B8),
+                            focusedContainerColor = Color.White,
+                            unfocusedContainerColor = Color.White
+                        )
+                    )
+
+                    AnimatedVisibility(
+                        visible = isProcessingCandidateImage,
+                        enter = fadeIn() + expandVertically(),
+                        exit = fadeOut() + shrinkVertically()
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clip(RoundedCornerShape(12.dp))
+                                .background(Color(0xFFEEF2FF))
+                                .border(1.dp, Color(0xFFC7D2FE), RoundedCornerShape(12.dp))
+                                .padding(10.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(16.dp),
+                                strokeWidth = 2.dp,
+                                color = Color(0xFF4F46E5)
+                            )
+                            Spacer(modifier = Modifier.width(10.dp))
+                            Text(
+                                text = "AI กำลังวิเคราะห์และเรียงลำดับข้อมูลผู้สมัคร... กรุณารอสักครู่",
+                                color = Color(0xFF3730A3),
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.Medium
+                            )
+                        }
+                    }
+                }
 
                 if (errorMessage != null) {
                     Row(
@@ -542,47 +600,6 @@ fun AnalyzeTab(
                     }
                 }
             }
-        }
-
-        if (showScanDialog) {
-            AlertDialog(
-                onDismissRequest = { showScanDialog = false },
-                title = {
-                    Text(
-                        "สแกนเอกสารด้วย AI Scanner",
-                        fontWeight = FontWeight.Bold,
-                        color = Color(0xFF0F172A)
-                    )
-                },
-                text = {
-                    Text(
-                        "กรุณาเลือกวิธีการอัปโหลดรูปภาพใบเซอร์, ใบเกรด หรือเรซูเม่ เพื่อให้ AI วิเคราะห์ข้อมูลและกรอกฟอร์มโดยอัตโนมัติ",
-                        color = Color(0xFF334155)
-                    )
-                },
-                confirmButton = {
-                    Button(
-                        onClick = {
-                            showScanDialog = false
-                            takePhotoLauncher.launch(null)
-                        },
-                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4F46E5))
-                    ) {
-                        Text("ถ่ายภาพใหม่ (Camera)")
-                    }
-                },
-                dismissButton = {
-                    OutlinedButton(
-                        onClick = {
-                            showScanDialog = false
-                            pickImageLauncher.launch("image/*")
-                        },
-                        border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFCBD5E1))
-                    ) {
-                        Text("เลือกรูปจากเครื่อง (Gallery)")
-                    }
-                }
-            )
         }
 
         Spacer(modifier = Modifier.height(24.dp))
