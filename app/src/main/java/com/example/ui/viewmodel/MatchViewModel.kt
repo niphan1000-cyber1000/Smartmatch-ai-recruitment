@@ -31,6 +31,18 @@ class MatchViewModel(
     private val _jobDescription = MutableStateFlow("")
     val jobDescription = _jobDescription.asStateFlow()
 
+    private val _keyResponsibilities = MutableStateFlow("")
+    val keyResponsibilities = _keyResponsibilities.asStateFlow()
+
+    private val _keyAccountabilities = MutableStateFlow("")
+    val keyAccountabilities = _keyAccountabilities.asStateFlow()
+
+    private val _keyPerformanceIndicators = MutableStateFlow("")
+    val keyPerformanceIndicators = _keyPerformanceIndicators.asStateFlow()
+
+    private val _qualifications = MutableStateFlow("")
+    val qualifications = _qualifications.asStateFlow()
+
     private val _candidateProfile = MutableStateFlow("")
     val candidateProfile = _candidateProfile.asStateFlow()
 
@@ -40,6 +52,18 @@ class MatchViewModel(
 
     private val _isProcessingJobImage = MutableStateFlow(false)
     val isProcessingJobImage = _isProcessingJobImage.asStateFlow()
+
+    private val _isProcessingKeyResponsibilitiesImage = MutableStateFlow(false)
+    val isProcessingKeyResponsibilitiesImage = _isProcessingKeyResponsibilitiesImage.asStateFlow()
+
+    private val _isProcessingKeyAccountabilitiesImage = MutableStateFlow(false)
+    val isProcessingKeyAccountabilitiesImage = _isProcessingKeyAccountabilitiesImage.asStateFlow()
+
+    private val _isProcessingKeyPerformanceIndicatorsImage = MutableStateFlow(false)
+    val isProcessingKeyPerformanceIndicatorsImage = _isProcessingKeyPerformanceIndicatorsImage.asStateFlow()
+
+    private val _isProcessingQualificationsImage = MutableStateFlow(false)
+    val isProcessingQualificationsImage = _isProcessingQualificationsImage.asStateFlow()
 
     private val _isProcessingCandidateImage = MutableStateFlow(false)
     val isProcessingCandidateImage = _isProcessingCandidateImage.asStateFlow()
@@ -81,6 +105,22 @@ class MatchViewModel(
         _jobDescription.value = desc
     }
 
+    fun updateKeyResponsibilities(value: String) {
+        _keyResponsibilities.value = value
+    }
+
+    fun updateKeyAccountabilities(value: String) {
+        _keyAccountabilities.value = value
+    }
+
+    fun updateKeyPerformanceIndicators(value: String) {
+        _keyPerformanceIndicators.value = value
+    }
+
+    fun updateQualifications(value: String) {
+        _qualifications.value = value
+    }
+
     fun updateCandidateProfile(profile: String) {
         _candidateProfile.value = profile
     }
@@ -97,10 +137,18 @@ class MatchViewModel(
             _jobTitle.value = record.jobTitle
             _candidateName.value = record.candidateName
             _jobDescription.value = record.jobDescription
+            _keyResponsibilities.value = record.keyResponsibilities
+            _keyAccountabilities.value = record.keyAccountabilities
+            _keyPerformanceIndicators.value = record.keyPerformanceIndicators
+            _qualifications.value = record.qualifications
             _candidateProfile.value = record.resumeText
         } else {
             _currentAnalysisResult.value = null
             _currentMatchScore.value = null
+            _keyResponsibilities.value = ""
+            _keyAccountabilities.value = ""
+            _keyPerformanceIndicators.value = ""
+            _qualifications.value = ""
         }
     }
 
@@ -127,6 +175,10 @@ class MatchViewModel(
     fun analyzeAndMatch() {
         val apiKey = BuildConfig.GEMINI_API_KEY
         val jobDesc = _jobDescription.value.trim()
+        val keyResp = _keyResponsibilities.value.trim()
+        val keyAcc = _keyAccountabilities.value.trim()
+        val keyKpi = _keyPerformanceIndicators.value.trim()
+        val qual = _qualifications.value.trim()
         val candidateProf = _candidateProfile.value.trim()
         val title = _jobTitle.value.trim().ifEmpty { "IT Position" }
         val name = _candidateName.value.trim().ifEmpty { "Applicant" }
@@ -136,8 +188,8 @@ class MatchViewModel(
             return
         }
 
-        if (jobDesc.isEmpty()) {
-            _errorMessage.value = "Please provide a Job Description to match."
+        if (jobDesc.isEmpty() && keyResp.isEmpty() && keyAcc.isEmpty() && keyKpi.isEmpty() && qual.isEmpty()) {
+            _errorMessage.value = "Please provide at least one job detail or job description field."
             return
         }
 
@@ -152,11 +204,37 @@ class MatchViewModel(
         _currentMatchScore.value = null
         _selectedRecord.value = null
 
+        val fullJobDesc = buildString {
+            if (jobDesc.isNotEmpty()) {
+                append(jobDesc)
+            }
+            if (keyResp.isNotEmpty()) {
+                if (isNotEmpty()) append("\n\n")
+                append("### The key responsibilities for this role\n")
+                append(keyResp)
+            }
+            if (keyAcc.isNotEmpty()) {
+                if (isNotEmpty()) append("\n\n")
+                append("### Key Accountabilities\n")
+                append(keyAcc)
+            }
+            if (keyKpi.isNotEmpty()) {
+                if (isNotEmpty()) append("\n\n")
+                append("### Key Performance Indicators\n")
+                append(keyKpi)
+            }
+            if (qual.isNotEmpty()) {
+                if (isNotEmpty()) append("\n\n")
+                append("### Qualifications\n")
+                append(qual)
+            }
+        }.trim()
+
         viewModelScope.launch {
             try {
                 val analysisText = repository.generateAnalysis(
                     apiKey = apiKey,
-                    jobDescription = jobDesc,
+                    jobDescription = fullJobDesc,
                     candidateProfile = candidateProf
                 )
 
@@ -171,6 +249,10 @@ class MatchViewModel(
                     matchScore = score,
                     resumeText = candidateProf,
                     jobDescription = jobDesc,
+                    keyResponsibilities = keyResp,
+                    keyAccountabilities = keyAcc,
+                    keyPerformanceIndicators = keyKpi,
+                    qualifications = qual,
                     analysisResult = analysisText
                 )
                 repository.insertRecord(record)
@@ -473,6 +555,81 @@ class MatchViewModel(
                 _isProcessingJobImage.value = false
             }
         }
+    }
+
+    private fun extractFieldFromImages(
+        bitmaps: List<android.graphics.Bitmap>,
+        fieldName: String,
+        promptInstruction: String,
+        processingFlow: MutableStateFlow<Boolean>,
+        targetFlow: MutableStateFlow<String>
+    ) {
+        if (bitmaps.isEmpty()) return
+        val apiKey = BuildConfig.GEMINI_API_KEY
+        if (apiKey.isEmpty() || apiKey == "MY_GEMINI_API_KEY") {
+            _errorMessage.value = "Gemini API Key is not set or invalid. Please configure it in the Secrets panel in AI Studio."
+            return
+        }
+
+        processingFlow.value = true
+        _errorMessage.value = null
+
+        viewModelScope.launch {
+            try {
+                val base64List = bitmaps.map { bitmapToBase64(it) }
+                val extractedText = repository.extractFieldFromMultipleImages(
+                    apiKey = apiKey,
+                    base64Images = base64List,
+                    fieldName = fieldName,
+                    promptInstruction = promptInstruction
+                )
+                targetFlow.value = extractedText
+            } catch (e: Exception) {
+                _errorMessage.value = "Image Parsing Failed for $fieldName: ${e.message ?: "Unknown error"}"
+            } finally {
+                processingFlow.value = false
+            }
+        }
+    }
+
+    fun extractKeyResponsibilitiesFromImages(bitmaps: List<android.graphics.Bitmap>) {
+        extractFieldFromImages(
+            bitmaps = bitmaps,
+            fieldName = "The key responsibilities for this role",
+            promptInstruction = "Extract the key duties, tasks, and responsibilities for the job role shown in the document. Arrange them as a clean, sequential bullet-pointed list.",
+            processingFlow = _isProcessingKeyResponsibilitiesImage,
+            targetFlow = _keyResponsibilities
+        )
+    }
+
+    fun extractKeyAccountabilitiesFromImages(bitmaps: List<android.graphics.Bitmap>) {
+        extractFieldFromImages(
+            bitmaps = bitmaps,
+            fieldName = "Key Accountabilities",
+            promptInstruction = "Extract the main areas of accountability, ownership, or deliverables for the role. Arrange them as a clean, sequential list of key accountability items.",
+            processingFlow = _isProcessingKeyAccountabilitiesImage,
+            targetFlow = _keyAccountabilities
+        )
+    }
+
+    fun extractKeyPerformanceIndicatorsFromImages(bitmaps: List<android.graphics.Bitmap>) {
+        extractFieldFromImages(
+            bitmaps = bitmaps,
+            fieldName = "Key Performance Indicators (KPIs)",
+            promptInstruction = "Extract the metrics, measurements, or KPIs used to measure performance or success for this position. Arrange them as a clean list.",
+            processingFlow = _isProcessingKeyPerformanceIndicatorsImage,
+            targetFlow = _keyPerformanceIndicators
+        )
+    }
+
+    fun extractQualificationsFromImages(bitmaps: List<android.graphics.Bitmap>) {
+        extractFieldFromImages(
+            bitmaps = bitmaps,
+            fieldName = "Qualifications",
+            promptInstruction = "Extract the academic qualifications, certifications, years of experience, technical skills, or language requirements for the role. Arrange them neatly as bullet points.",
+            processingFlow = _isProcessingQualificationsImage,
+            targetFlow = _qualifications
+        )
     }
 
     private fun bitmapToBase64(bitmap: android.graphics.Bitmap, maxSize: Int = 1024): String {

@@ -11,6 +11,10 @@ data class MatchRecord(
     val matchScore: Int?,
     val resumeText: String,
     val jobDescription: String,
+    val keyResponsibilities: String = "",
+    val keyAccountabilities: String = "",
+    val keyPerformanceIndicators: String = "",
+    val qualifications: String = "",
     val analysisResult: String,
     val timestamp: Long = System.currentTimeMillis()
 )

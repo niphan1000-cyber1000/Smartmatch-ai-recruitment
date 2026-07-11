@@ -217,8 +217,16 @@ fun AnalyzeTab(
     val jobTitle by viewModel.jobTitle.collectAsState()
     val candidateName by viewModel.candidateName.collectAsState()
     val jobDescription by viewModel.jobDescription.collectAsState()
+    val keyResponsibilities by viewModel.keyResponsibilities.collectAsState()
+    val keyAccountabilities by viewModel.keyAccountabilities.collectAsState()
+    val keyPerformanceIndicators by viewModel.keyPerformanceIndicators.collectAsState()
+    val qualifications by viewModel.qualifications.collectAsState()
     val candidateProfile by viewModel.candidateProfile.collectAsState()
     val isProcessingJobImage by viewModel.isProcessingJobImage.collectAsState()
+    val isProcessingKeyResponsibilitiesImage by viewModel.isProcessingKeyResponsibilitiesImage.collectAsState()
+    val isProcessingKeyAccountabilitiesImage by viewModel.isProcessingKeyAccountabilitiesImage.collectAsState()
+    val isProcessingKeyPerformanceIndicatorsImage by viewModel.isProcessingKeyPerformanceIndicatorsImage.collectAsState()
+    val isProcessingQualificationsImage by viewModel.isProcessingQualificationsImage.collectAsState()
     val isProcessingCandidateImage by viewModel.isProcessingCandidateImage.collectAsState()
 
     val context = LocalContext.current
@@ -233,6 +241,90 @@ fun AnalyzeTab(
             if (bitmaps.isNotEmpty()) {
                 viewModel.extractJobFromImages(bitmaps)
             }
+        }
+    }
+
+    val takeJobPhotoLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.TakePicturePreview()
+    ) { bitmap: Bitmap? ->
+        if (bitmap != null) {
+            viewModel.extractJobFromImages(listOf(bitmap))
+        }
+    }
+
+    val pickMultipleKeyResponsibilitiesLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetMultipleContents()
+    ) { uris: List<Uri> ->
+        if (uris.isNotEmpty()) {
+            val bitmaps = uris.mapNotNull { uriToBitmap(context, it) }
+            if (bitmaps.isNotEmpty()) {
+                viewModel.extractKeyResponsibilitiesFromImages(bitmaps)
+            }
+        }
+    }
+
+    val takeKeyResponsibilitiesPhotoLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.TakePicturePreview()
+    ) { bitmap: Bitmap? ->
+        if (bitmap != null) {
+            viewModel.extractKeyResponsibilitiesFromImages(listOf(bitmap))
+        }
+    }
+
+    val pickMultipleKeyAccountabilitiesLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetMultipleContents()
+    ) { uris: List<Uri> ->
+        if (uris.isNotEmpty()) {
+            val bitmaps = uris.mapNotNull { uriToBitmap(context, it) }
+            if (bitmaps.isNotEmpty()) {
+                viewModel.extractKeyAccountabilitiesFromImages(bitmaps)
+            }
+        }
+    }
+
+    val takeKeyAccountabilitiesPhotoLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.TakePicturePreview()
+    ) { bitmap: Bitmap? ->
+        if (bitmap != null) {
+            viewModel.extractKeyAccountabilitiesFromImages(listOf(bitmap))
+        }
+    }
+
+    val pickMultipleKeyPerformanceIndicatorsLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetMultipleContents()
+    ) { uris: List<Uri> ->
+        if (uris.isNotEmpty()) {
+            val bitmaps = uris.mapNotNull { uriToBitmap(context, it) }
+            if (bitmaps.isNotEmpty()) {
+                viewModel.extractKeyPerformanceIndicatorsFromImages(bitmaps)
+            }
+        }
+    }
+
+    val takeKeyPerformanceIndicatorsPhotoLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.TakePicturePreview()
+    ) { bitmap: Bitmap? ->
+        if (bitmap != null) {
+            viewModel.extractKeyPerformanceIndicatorsFromImages(listOf(bitmap))
+        }
+    }
+
+    val pickMultipleQualificationsLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetMultipleContents()
+    ) { uris: List<Uri> ->
+        if (uris.isNotEmpty()) {
+            val bitmaps = uris.mapNotNull { uriToBitmap(context, it) }
+            if (bitmaps.isNotEmpty()) {
+                viewModel.extractQualificationsFromImages(bitmaps)
+            }
+        }
+    }
+
+    val takeQualificationsPhotoLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.TakePicturePreview()
+    ) { bitmap: Bitmap? ->
+        if (bitmap != null) {
+            viewModel.extractQualificationsFromImages(listOf(bitmap))
         }
     }
 
@@ -360,23 +452,46 @@ fun AnalyzeTab(
                             color = Color(0xFF334155)
                         )
 
-                        Button(
-                            onClick = { pickMultipleJobImagesLauncher.launch("image/*") },
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = Color(0xFF4F46E5),
-                                contentColor = Color.White
-                            ),
-                            shape = RoundedCornerShape(10.dp),
-                            contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 10.dp, vertical = 4.dp),
-                            modifier = Modifier.height(30.dp)
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(6.dp)
                         ) {
-                            Icon(
-                                imageVector = Icons.Filled.Collections,
-                                contentDescription = "เลือกไฟล์รูปภาพ",
-                                modifier = Modifier.size(14.dp)
-                            )
-                            Spacer(modifier = Modifier.width(4.dp))
-                            Text("เลือกไฟล์รูปภาพ", fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                            Button(
+                                onClick = { takeJobPhotoLauncher.launch(null) },
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = Color(0xFF0EA5E9),
+                                    contentColor = Color.White
+                                ),
+                                shape = RoundedCornerShape(10.dp),
+                                contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 10.dp, vertical = 4.dp),
+                                modifier = Modifier.height(30.dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Filled.PhotoCamera,
+                                    contentDescription = "ถ่ายรูป",
+                                    modifier = Modifier.size(14.dp)
+                                )
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Text("ถ่ายรูป", fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                            }
+
+                            Button(
+                                onClick = { pickMultipleJobImagesLauncher.launch("image/*") },
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = Color(0xFF4F46E5),
+                                    contentColor = Color.White
+                                ),
+                                shape = RoundedCornerShape(10.dp),
+                                contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 10.dp, vertical = 4.dp),
+                                modifier = Modifier.height(30.dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Filled.Collections,
+                                    contentDescription = "แอดไฟล์",
+                                    modifier = Modifier.size(14.dp)
+                                )
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Text("แอดไฟล์", fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                            }
                         }
                     }
 
@@ -423,6 +538,450 @@ fun AnalyzeTab(
                             Spacer(modifier = Modifier.width(10.dp))
                             Text(
                                 text = "AI กำลังอ่านและเรียงลำดับคำอธิบายงาน... กรุณารอสักครู่",
+                                color = Color(0xFF3730A3),
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.Medium
+                            )
+                        }
+                    }
+                }
+
+                // Key Responsibilities Section
+                Column(
+                    verticalArrangement = Arrangement.spacedBy(6.dp),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = "ความรับผิดชอบหลัก (The key responsibilities for this role)",
+                            style = MaterialTheme.typography.bodyMedium,
+                            fontWeight = FontWeight.SemiBold,
+                            color = Color(0xFF334155)
+                        )
+
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(6.dp)
+                        ) {
+                            Button(
+                                onClick = { takeKeyResponsibilitiesPhotoLauncher.launch(null) },
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = Color(0xFF0EA5E9),
+                                    contentColor = Color.White
+                                ),
+                                shape = RoundedCornerShape(10.dp),
+                                contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 10.dp, vertical = 4.dp),
+                                modifier = Modifier.height(30.dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Filled.PhotoCamera,
+                                    contentDescription = "ถ่ายรูป",
+                                    modifier = Modifier.size(14.dp)
+                                )
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Text("ถ่ายรูป", fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                            }
+
+                            Button(
+                                onClick = { pickMultipleKeyResponsibilitiesLauncher.launch("image/*") },
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = Color(0xFF4F46E5),
+                                    contentColor = Color.White
+                                ),
+                                shape = RoundedCornerShape(10.dp),
+                                contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 10.dp, vertical = 4.dp),
+                                modifier = Modifier.height(30.dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Filled.Collections,
+                                    contentDescription = "แอดไฟล์",
+                                    modifier = Modifier.size(14.dp)
+                                )
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Text("แอดไฟล์", fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                            }
+                        }
+                    }
+
+                    OutlinedTextField(
+                        value = keyResponsibilities,
+                        onValueChange = { viewModel.updateKeyResponsibilities(it) },
+                        placeholder = { Text("ระบุบทบาทและหน้าที่ความรับผิดชอบ หรืออัปโหลดรูปภาพใบรายละเอียดงานเพื่อให้ AI ดึงข้อมูลบทบาทหน้าที่ให้...") },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(130.dp)
+                            .testTag("key_resp_input"),
+                        shape = RoundedCornerShape(14.dp),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedTextColor = Color(0xFF0F172A),
+                            unfocusedTextColor = Color(0xFF1E293B),
+                            focusedLabelColor = MaterialTheme.colorScheme.primary,
+                            unfocusedLabelColor = Color(0xFF475569),
+                            focusedBorderColor = MaterialTheme.colorScheme.primary,
+                            unfocusedBorderColor = Color(0xFF94A3B8),
+                            focusedContainerColor = Color.White,
+                            unfocusedContainerColor = Color.White
+                        )
+                    )
+
+                    AnimatedVisibility(
+                        visible = isProcessingKeyResponsibilitiesImage,
+                        enter = fadeIn() + expandVertically(),
+                        exit = fadeOut() + shrinkVertically()
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clip(RoundedCornerShape(12.dp))
+                                .background(Color(0xFFEEF2FF))
+                                .border(1.dp, Color(0xFFC7D2FE), RoundedCornerShape(12.dp))
+                                .padding(10.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(16.dp),
+                                strokeWidth = 2.dp,
+                                color = Color(0xFF4F46E5)
+                            )
+                            Spacer(modifier = Modifier.width(10.dp))
+                            Text(
+                                text = "AI กำลังอ่านและเรียงลำดับหน้าที่ความรับผิดชอบ... กรุณารอสักครู่",
+                                color = Color(0xFF3730A3),
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.Medium
+                            )
+                        }
+                    }
+                }
+
+                // Key Accountabilities Section
+                Column(
+                    verticalArrangement = Arrangement.spacedBy(6.dp),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = "ภาระงานที่ต้องรับผิดชอบ (Key Accountabilities)",
+                            style = MaterialTheme.typography.bodyMedium,
+                            fontWeight = FontWeight.SemiBold,
+                            color = Color(0xFF334155)
+                        )
+
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(6.dp)
+                        ) {
+                            Button(
+                                onClick = { takeKeyAccountabilitiesPhotoLauncher.launch(null) },
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = Color(0xFF0EA5E9),
+                                    contentColor = Color.White
+                                ),
+                                shape = RoundedCornerShape(10.dp),
+                                contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 10.dp, vertical = 4.dp),
+                                modifier = Modifier.height(30.dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Filled.PhotoCamera,
+                                    contentDescription = "ถ่ายรูป",
+                                    modifier = Modifier.size(14.dp)
+                                )
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Text("ถ่ายรูป", fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                            }
+
+                            Button(
+                                onClick = { pickMultipleKeyAccountabilitiesLauncher.launch("image/*") },
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = Color(0xFF4F46E5),
+                                    contentColor = Color.White
+                                ),
+                                shape = RoundedCornerShape(10.dp),
+                                contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 10.dp, vertical = 4.dp),
+                                modifier = Modifier.height(30.dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Filled.Collections,
+                                    contentDescription = "แอดไฟล์",
+                                    modifier = Modifier.size(14.dp)
+                                )
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Text("แอดไฟล์", fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                            }
+                        }
+                    }
+
+                    OutlinedTextField(
+                        value = keyAccountabilities,
+                        onValueChange = { viewModel.updateKeyAccountabilities(it) },
+                        placeholder = { Text("ระบุภาระงานและผลสัมฤทธิ์ที่คาดหวัง หรืออัปโหลดรูปภาพ...") },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(130.dp)
+                            .testTag("key_acc_input"),
+                        shape = RoundedCornerShape(14.dp),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedTextColor = Color(0xFF0F172A),
+                            unfocusedTextColor = Color(0xFF1E293B),
+                            focusedLabelColor = MaterialTheme.colorScheme.primary,
+                            unfocusedLabelColor = Color(0xFF475569),
+                            focusedBorderColor = MaterialTheme.colorScheme.primary,
+                            unfocusedBorderColor = Color(0xFF94A3B8),
+                            focusedContainerColor = Color.White,
+                            unfocusedContainerColor = Color.White
+                        )
+                    )
+
+                    AnimatedVisibility(
+                        visible = isProcessingKeyAccountabilitiesImage,
+                        enter = fadeIn() + expandVertically(),
+                        exit = fadeOut() + shrinkVertically()
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clip(RoundedCornerShape(12.dp))
+                                .background(Color(0xFFEEF2FF))
+                                .border(1.dp, Color(0xFFC7D2FE), RoundedCornerShape(12.dp))
+                                .padding(10.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(16.dp),
+                                strokeWidth = 2.dp,
+                                color = Color(0xFF4F46E5)
+                            )
+                            Spacer(modifier = Modifier.width(10.dp))
+                            Text(
+                                text = "AI กำลังอ่านและเรียงลำดับภาระงานหลัก... กรุณารอสักครู่",
+                                color = Color(0xFF3730A3),
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.Medium
+                            )
+                        }
+                    }
+                }
+
+                // Key Performance Indicators Section
+                Column(
+                    verticalArrangement = Arrangement.spacedBy(6.dp),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = "ดัชนีชี้วัดผลงานหลัก (Key Performance Indicators)",
+                            style = MaterialTheme.typography.bodyMedium,
+                            fontWeight = FontWeight.SemiBold,
+                            color = Color(0xFF334155)
+                        )
+
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(6.dp)
+                        ) {
+                            Button(
+                                onClick = { takeKeyPerformanceIndicatorsPhotoLauncher.launch(null) },
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = Color(0xFF0EA5E9),
+                                    contentColor = Color.White
+                                ),
+                                shape = RoundedCornerShape(10.dp),
+                                contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 10.dp, vertical = 4.dp),
+                                modifier = Modifier.height(30.dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Filled.PhotoCamera,
+                                    contentDescription = "ถ่ายรูป",
+                                    modifier = Modifier.size(14.dp)
+                                )
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Text("ถ่ายรูป", fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                            }
+
+                            Button(
+                                onClick = { pickMultipleKeyPerformanceIndicatorsLauncher.launch("image/*") },
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = Color(0xFF4F46E5),
+                                    contentColor = Color.White
+                                ),
+                                shape = RoundedCornerShape(10.dp),
+                                contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 10.dp, vertical = 4.dp),
+                                modifier = Modifier.height(30.dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Filled.Collections,
+                                    contentDescription = "แอดไฟล์",
+                                    modifier = Modifier.size(14.dp)
+                                )
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Text("แอดไฟล์", fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                            }
+                        }
+                    }
+
+                    OutlinedTextField(
+                        value = keyPerformanceIndicators,
+                        onValueChange = { viewModel.updateKeyPerformanceIndicators(it) },
+                        placeholder = { Text("ระบุตัววัดผลงานหรือเป้าหมาย KPI หรืออัปโหลดรูปภาพ...") },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(130.dp)
+                            .testTag("key_kpi_input"),
+                        shape = RoundedCornerShape(14.dp),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedTextColor = Color(0xFF0F172A),
+                            unfocusedTextColor = Color(0xFF1E293B),
+                            focusedLabelColor = MaterialTheme.colorScheme.primary,
+                            unfocusedLabelColor = Color(0xFF475569),
+                            focusedBorderColor = MaterialTheme.colorScheme.primary,
+                            unfocusedBorderColor = Color(0xFF94A3B8),
+                            focusedContainerColor = Color.White,
+                            unfocusedContainerColor = Color.White
+                        )
+                    )
+
+                    AnimatedVisibility(
+                        visible = isProcessingKeyPerformanceIndicatorsImage,
+                        enter = fadeIn() + expandVertically(),
+                        exit = fadeOut() + shrinkVertically()
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clip(RoundedCornerShape(12.dp))
+                                .background(Color(0xFFEEF2FF))
+                                .border(1.dp, Color(0xFFC7D2FE), RoundedCornerShape(12.dp))
+                                .padding(10.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(16.dp),
+                                strokeWidth = 2.dp,
+                                color = Color(0xFF4F46E5)
+                            )
+                            Spacer(modifier = Modifier.width(10.dp))
+                            Text(
+                                text = "AI กำลังอ่านและเรียงลำดับตัวชี้วัดประสิทธิภาพ... กรุณารอสักครู่",
+                                color = Color(0xFF3730A3),
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.Medium
+                            )
+                        }
+                    }
+                }
+
+                // Qualifications Section
+                Column(
+                    verticalArrangement = Arrangement.spacedBy(6.dp),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = "คุณสมบัติผู้สมัคร (Qualifications)",
+                            style = MaterialTheme.typography.bodyMedium,
+                            fontWeight = FontWeight.SemiBold,
+                            color = Color(0xFF334155)
+                        )
+
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(6.dp)
+                        ) {
+                            Button(
+                                onClick = { takeQualificationsPhotoLauncher.launch(null) },
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = Color(0xFF0EA5E9),
+                                    contentColor = Color.White
+                                ),
+                                shape = RoundedCornerShape(10.dp),
+                                contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 10.dp, vertical = 4.dp),
+                                modifier = Modifier.height(30.dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Filled.PhotoCamera,
+                                    contentDescription = "ถ่ายรูป",
+                                    modifier = Modifier.size(14.dp)
+                                )
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Text("ถ่ายรูป", fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                            }
+
+                            Button(
+                                onClick = { pickMultipleQualificationsLauncher.launch("image/*") },
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = Color(0xFF4F46E5),
+                                    contentColor = Color.White
+                                ),
+                                shape = RoundedCornerShape(10.dp),
+                                contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 10.dp, vertical = 4.dp),
+                                modifier = Modifier.height(30.dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Filled.Collections,
+                                    contentDescription = "แอดไฟล์",
+                                    modifier = Modifier.size(14.dp)
+                                )
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Text("แอดไฟล์", fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                            }
+                        }
+                    }
+
+                    OutlinedTextField(
+                        value = qualifications,
+                        onValueChange = { viewModel.updateQualifications(it) },
+                        placeholder = { Text("ระบุประวัติการศึกษา ประสบการณ์ทำงาน ทักษะ หรืออัปโหลดรูปภาพ...") },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(130.dp)
+                            .testTag("qualifications_input"),
+                        shape = RoundedCornerShape(14.dp),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedTextColor = Color(0xFF0F172A),
+                            unfocusedTextColor = Color(0xFF1E293B),
+                            focusedLabelColor = MaterialTheme.colorScheme.primary,
+                            unfocusedLabelColor = Color(0xFF475569),
+                            focusedBorderColor = MaterialTheme.colorScheme.primary,
+                            unfocusedBorderColor = Color(0xFF94A3B8),
+                            focusedContainerColor = Color.White,
+                            unfocusedContainerColor = Color.White
+                        )
+                    )
+
+                    AnimatedVisibility(
+                        visible = isProcessingQualificationsImage,
+                        enter = fadeIn() + expandVertically(),
+                        exit = fadeOut() + shrinkVertically()
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clip(RoundedCornerShape(12.dp))
+                                .background(Color(0xFFEEF2FF))
+                                .border(1.dp, Color(0xFFC7D2FE), RoundedCornerShape(12.dp))
+                                .padding(10.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(16.dp),
+                                strokeWidth = 2.dp,
+                                color = Color(0xFF4F46E5)
+                            )
+                            Spacer(modifier = Modifier.width(10.dp))
+                            Text(
+                                text = "AI กำลังอ่านและเรียงลำดับคุณสมบัติ... กรุณารอสักครู่",
                                 color = Color(0xFF3730A3),
                                 fontSize = 11.sp,
                                 fontWeight = FontWeight.Medium
@@ -482,11 +1041,11 @@ fun AnalyzeTab(
                             ) {
                                 Icon(
                                     imageVector = Icons.Filled.Collections,
-                                    contentDescription = "เลือกหลายรูป",
+                                    contentDescription = "แอดไฟล์",
                                     modifier = Modifier.size(14.dp)
                                 )
                                 Spacer(modifier = Modifier.width(4.dp))
-                                Text("เลือกหลายรูป", fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                                Text("แอดไฟล์", fontSize = 11.sp, fontWeight = FontWeight.Bold)
                             }
                         }
                     }

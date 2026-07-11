@@ -177,4 +177,41 @@ class MatchRepository(private val matchRecordDao: MatchRecordDao) {
             throw Exception("Received an empty response from Gemini API.")
         }
     }
+
+    suspend fun extractFieldFromMultipleImages(
+        apiKey: String,
+        base64Images: List<String>,
+        fieldName: String,
+        promptInstruction: String,
+        mimeType: String = "image/jpeg"
+    ): String {
+        val prompt = """
+            Analyze the provided document images in sequential order.
+            Your task is to extract, compile, and arrange the information related to: "$fieldName".
+            
+            Specific Instructions for "$fieldName":
+            $promptInstruction
+            
+            Strictly return ONLY the extracted and compiled information formatted in clean, standard Markdown/text. Do NOT include any intro, outro, conversational fillers, or explanations. Start directly with the relevant content. Ensure the content from all pages flows continuously and is merged beautifully into one cohesive text.
+        """.trimIndent()
+
+        val parts = mutableListOf<Part>()
+        parts.add(Part(text = prompt))
+        for (base64Image in base64Images) {
+            parts.add(Part(inlineData = InlineData(mimeType = mimeType, data = base64Image)))
+        }
+
+        val request = GenerateContentRequest(
+            contents = listOf(Content(parts = parts)),
+            generationConfig = GenerationConfig(temperature = 0.1f)
+        )
+
+        val response = RetrofitClient.service.generateContent(apiKey, request)
+        val textResponse = response.candidates?.firstOrNull()?.content?.parts?.firstOrNull()?.text
+        if (textResponse != null) {
+            return textResponse
+        } else {
+            throw Exception("Received an empty response from Gemini API.")
+        }
+    }
 }
