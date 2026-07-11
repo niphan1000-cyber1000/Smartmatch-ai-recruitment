@@ -266,11 +266,18 @@ fun AnalyzeTab(
         }
     }
 
+    var tempPhotoUri by remember { mutableStateOf<Uri?>(null) }
+
     val takeJobPhotoLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.TakePicturePreview()
-    ) { bitmap: Bitmap? ->
-        if (bitmap != null) {
-            viewModel.extractJobFromImages(listOf(bitmap))
+        contract = ActivityResultContracts.TakePicture()
+    ) { success: Boolean ->
+        if (success) {
+            tempPhotoUri?.let { uri ->
+                val bitmap = uriToBitmap(context, uri)
+                if (bitmap != null) {
+                    viewModel.extractJobFromImages(listOf(bitmap))
+                }
+            }
         }
     }
 
@@ -286,10 +293,15 @@ fun AnalyzeTab(
     }
 
     val takeKeyResponsibilitiesPhotoLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.TakePicturePreview()
-    ) { bitmap: Bitmap? ->
-        if (bitmap != null) {
-            viewModel.extractKeyResponsibilitiesFromImages(listOf(bitmap))
+        contract = ActivityResultContracts.TakePicture()
+    ) { success: Boolean ->
+        if (success) {
+            tempPhotoUri?.let { uri ->
+                val bitmap = uriToBitmap(context, uri)
+                if (bitmap != null) {
+                    viewModel.extractKeyResponsibilitiesFromImages(listOf(bitmap))
+                }
+            }
         }
     }
 
@@ -305,10 +317,15 @@ fun AnalyzeTab(
     }
 
     val takeKeyAccountabilitiesPhotoLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.TakePicturePreview()
-    ) { bitmap: Bitmap? ->
-        if (bitmap != null) {
-            viewModel.extractKeyAccountabilitiesFromImages(listOf(bitmap))
+        contract = ActivityResultContracts.TakePicture()
+    ) { success: Boolean ->
+        if (success) {
+            tempPhotoUri?.let { uri ->
+                val bitmap = uriToBitmap(context, uri)
+                if (bitmap != null) {
+                    viewModel.extractKeyAccountabilitiesFromImages(listOf(bitmap))
+                }
+            }
         }
     }
 
@@ -324,10 +341,15 @@ fun AnalyzeTab(
     }
 
     val takeKeyPerformanceIndicatorsPhotoLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.TakePicturePreview()
-    ) { bitmap: Bitmap? ->
-        if (bitmap != null) {
-            viewModel.extractKeyPerformanceIndicatorsFromImages(listOf(bitmap))
+        contract = ActivityResultContracts.TakePicture()
+    ) { success: Boolean ->
+        if (success) {
+            tempPhotoUri?.let { uri ->
+                val bitmap = uriToBitmap(context, uri)
+                if (bitmap != null) {
+                    viewModel.extractKeyPerformanceIndicatorsFromImages(listOf(bitmap))
+                }
+            }
         }
     }
 
@@ -343,10 +365,15 @@ fun AnalyzeTab(
     }
 
     val takeQualificationsPhotoLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.TakePicturePreview()
-    ) { bitmap: Bitmap? ->
-        if (bitmap != null) {
-            viewModel.extractQualificationsFromImages(listOf(bitmap))
+        contract = ActivityResultContracts.TakePicture()
+    ) { success: Boolean ->
+        if (success) {
+            tempPhotoUri?.let { uri ->
+                val bitmap = uriToBitmap(context, uri)
+                if (bitmap != null) {
+                    viewModel.extractQualificationsFromImages(listOf(bitmap))
+                }
+            }
         }
     }
 
@@ -362,10 +389,15 @@ fun AnalyzeTab(
     }
 
     val takeCandidatePhotoLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.TakePicturePreview()
-    ) { bitmap: Bitmap? ->
-        if (bitmap != null) {
-            viewModel.extractCandidateFromImages(listOf(bitmap))
+        contract = ActivityResultContracts.TakePicture()
+    ) { success: Boolean ->
+        if (success) {
+            tempPhotoUri?.let { uri ->
+                val bitmap = uriToBitmap(context, uri)
+                if (bitmap != null) {
+                    viewModel.extractCandidateFromImages(listOf(bitmap))
+                }
+            }
         }
     }
 
@@ -478,7 +510,13 @@ fun AnalyzeTab(
                             horizontalArrangement = Arrangement.spacedBy(6.dp)
                         ) {
                             Button(
-                                onClick = { executeWithCameraPermission { takeJobPhotoLauncher.launch(null) } },
+                                onClick = {
+                                    executeWithCameraPermission {
+                                        val uri = createTempImageUri(context, "temp_capture.jpg")
+                                        tempPhotoUri = uri
+                                        takeJobPhotoLauncher.launch(uri)
+                                    }
+                                },
                                 colors = ButtonDefaults.buttonColors(
                                     containerColor = Color(0xFF0EA5E9),
                                     contentColor = Color.White
@@ -589,7 +627,13 @@ fun AnalyzeTab(
                             horizontalArrangement = Arrangement.spacedBy(6.dp)
                         ) {
                             Button(
-                                onClick = { executeWithCameraPermission { takeKeyResponsibilitiesPhotoLauncher.launch(null) } },
+                                onClick = {
+                                    executeWithCameraPermission {
+                                        val uri = createTempImageUri(context, "temp_capture.jpg")
+                                        tempPhotoUri = uri
+                                        takeKeyResponsibilitiesPhotoLauncher.launch(uri)
+                                    }
+                                },
                                 colors = ButtonDefaults.buttonColors(
                                     containerColor = Color(0xFF0EA5E9),
                                     contentColor = Color.White
@@ -700,7 +744,13 @@ fun AnalyzeTab(
                             horizontalArrangement = Arrangement.spacedBy(6.dp)
                         ) {
                             Button(
-                                onClick = { executeWithCameraPermission { takeKeyAccountabilitiesPhotoLauncher.launch(null) } },
+                                onClick = {
+                                    executeWithCameraPermission {
+                                        val uri = createTempImageUri(context, "temp_capture.jpg")
+                                        tempPhotoUri = uri
+                                        takeKeyAccountabilitiesPhotoLauncher.launch(uri)
+                                    }
+                                },
                                 colors = ButtonDefaults.buttonColors(
                                     containerColor = Color(0xFF0EA5E9),
                                     contentColor = Color.White
@@ -811,7 +861,13 @@ fun AnalyzeTab(
                             horizontalArrangement = Arrangement.spacedBy(6.dp)
                         ) {
                             Button(
-                                onClick = { executeWithCameraPermission { takeKeyPerformanceIndicatorsPhotoLauncher.launch(null) } },
+                                onClick = {
+                                    executeWithCameraPermission {
+                                        val uri = createTempImageUri(context, "temp_capture.jpg")
+                                        tempPhotoUri = uri
+                                        takeKeyPerformanceIndicatorsPhotoLauncher.launch(uri)
+                                    }
+                                },
                                 colors = ButtonDefaults.buttonColors(
                                     containerColor = Color(0xFF0EA5E9),
                                     contentColor = Color.White
@@ -922,7 +978,13 @@ fun AnalyzeTab(
                             horizontalArrangement = Arrangement.spacedBy(6.dp)
                         ) {
                             Button(
-                                onClick = { executeWithCameraPermission { takeQualificationsPhotoLauncher.launch(null) } },
+                                onClick = {
+                                    executeWithCameraPermission {
+                                        val uri = createTempImageUri(context, "temp_capture.jpg")
+                                        tempPhotoUri = uri
+                                        takeQualificationsPhotoLauncher.launch(uri)
+                                    }
+                                },
                                 colors = ButtonDefaults.buttonColors(
                                     containerColor = Color(0xFF0EA5E9),
                                     contentColor = Color.White
@@ -1033,7 +1095,13 @@ fun AnalyzeTab(
                             horizontalArrangement = Arrangement.spacedBy(6.dp)
                         ) {
                             Button(
-                                onClick = { executeWithCameraPermission { takeCandidatePhotoLauncher.launch(null) } },
+                                onClick = {
+                                    executeWithCameraPermission {
+                                        val uri = createTempImageUri(context, "temp_capture.jpg")
+                                        tempPhotoUri = uri
+                                        takeCandidatePhotoLauncher.launch(uri)
+                                    }
+                                },
                                 colors = ButtonDefaults.buttonColors(
                                     containerColor = Color(0xFF0EA5E9),
                                     contentColor = Color.White
@@ -2170,4 +2238,17 @@ fun uriToBitmap(context: android.content.Context, uri: Uri): Bitmap? {
         e.printStackTrace()
         null
     }
+}
+
+fun createTempImageUri(context: android.content.Context, fileName: String): Uri {
+    val tempFile = java.io.File(context.cacheDir, fileName).apply {
+        if (exists()) delete()
+        parentFile?.mkdirs()
+        createNewFile()
+    }
+    return androidx.core.content.FileProvider.getUriForFile(
+        context,
+        "com.aistudio.resumematcher.fileprovider",
+        tempFile
+    )
 }
