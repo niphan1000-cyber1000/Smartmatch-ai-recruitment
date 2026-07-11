@@ -13,6 +13,7 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -81,6 +82,8 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import android.graphics.Bitmap
 import android.graphics.ImageDecoder
+import android.graphics.Matrix
+import android.media.ExifInterface
 import android.net.Uri
 import android.os.Build
 import android.provider.MediaStore
@@ -92,6 +95,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -266,7 +270,8 @@ fun AnalyzeTab(
         }
     }
 
-    var tempPhotoUri by remember { mutableStateOf<Uri?>(null) }
+    var tempPhotoUriStr by rememberSaveable { mutableStateOf<String?>(null) }
+    val tempPhotoUri = tempPhotoUriStr?.let { Uri.parse(it) }
 
     val takeJobPhotoLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.TakePicture()
@@ -418,6 +423,103 @@ fun AnalyzeTab(
 
         Spacer(modifier = Modifier.height(12.dp))
 
+        // Quick-Test Templates Card (New visual feature)
+        Card(
+            modifier = Modifier
+                .fillMaxWidth()
+                .widthIn(max = 600.dp)
+                .shadow(2.dp, RoundedCornerShape(24.dp))
+                .border(1.dp, Color(0xFFF1F5F9), RoundedCornerShape(24.dp)),
+            shape = RoundedCornerShape(24.dp),
+            colors = CardDefaults.cardColors(containerColor = Color.White)
+        ) {
+            Column(
+                modifier = Modifier
+                    .background(Color.White)
+                    .padding(20.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.Start,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        imageVector = Icons.Filled.Assignment,
+                        contentDescription = "Quick-Test Templates",
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(20.dp)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = "📋 เลือกเทมเพลตทดสอบด่วน (Quick-Test Templates)",
+                        style = MaterialTheme.typography.titleSmall,
+                        fontWeight = FontWeight.Bold,
+                        color = Color(0xFF1E293B)
+                    )
+                }
+
+                Text(
+                    text = "กดเลือกเทมเพลตเพื่อกรอกข้อมูลตัวอย่าง (ตำแหน่งงานและประวัติผู้สมัคร) ลงในฟอร์มโดยอัตโนมัติ เพื่อทดสอบการจับคู่และวิเคราะห์ด้วย AI ทันที",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = Color(0xFF64748B),
+                    lineHeight = 16.sp
+                )
+
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .horizontalScroll(rememberScrollState())
+                        .padding(vertical = 4.dp),
+                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    val presetJobs = viewModel.presetJobs
+                    val presetCandidates = viewModel.presetCandidates
+
+                    for (i in presetJobs.indices) {
+                        val job = presetJobs[i]
+                        val candidate = presetCandidates.getOrNull(i) ?: continue
+
+                        val isSelected = jobTitle == job.title && candidateName == candidate.name
+
+                        Box(
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(14.dp))
+                                .background(if (isSelected) Color(0xFFEEF2FF) else Color(0xFFF8FAFC))
+                                .border(
+                                    1.dp,
+                                    if (isSelected) Color(0xFF4F46E5) else Color(0xFFE2E8F0),
+                                    RoundedCornerShape(14.dp)
+                                )
+                                .clickable {
+                                    viewModel.applyPreset(i, i)
+                                    Toast.makeText(context, "โหลดเทมเพลต: ${job.title} เรียบร้อยแล้ว!", Toast.LENGTH_SHORT).show()
+                                }
+                                .padding(horizontal = 14.dp, vertical = 10.dp)
+                        ) {
+                            Column {
+                                Text(
+                                    text = "เทมเพลตที่ ${i + 1}: ${job.title.substringBefore(" (").substringBefore(" &")}",
+                                    color = if (isSelected) Color(0xFF4F46E5) else Color(0xFF1E293B),
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 12.sp
+                                )
+                                Spacer(modifier = Modifier.height(2.dp))
+                                Text(
+                                    text = "ผู้สมัคร: ${candidate.name}",
+                                    color = if (isSelected) Color(0xFF6366F1) else Color(0xFF64748B),
+                                    fontSize = 11.sp,
+                                    fontWeight = FontWeight.Medium
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
+
         // Form Fields (Sleek Theme style)
         Card(
             modifier = Modifier
@@ -512,8 +614,8 @@ fun AnalyzeTab(
                             Button(
                                 onClick = {
                                     executeWithCameraPermission {
-                                        val uri = createTempImageUri(context, "temp_capture.jpg")
-                                        tempPhotoUri = uri
+                                        val uri = createTempImageUri(context, "job_desc_${System.currentTimeMillis()}.jpg")
+                                        tempPhotoUriStr = uri.toString()
                                         takeJobPhotoLauncher.launch(uri)
                                     }
                                 },
@@ -629,8 +731,8 @@ fun AnalyzeTab(
                             Button(
                                 onClick = {
                                     executeWithCameraPermission {
-                                        val uri = createTempImageUri(context, "temp_capture.jpg")
-                                        tempPhotoUri = uri
+                                        val uri = createTempImageUri(context, "key_resp_${System.currentTimeMillis()}.jpg")
+                                        tempPhotoUriStr = uri.toString()
                                         takeKeyResponsibilitiesPhotoLauncher.launch(uri)
                                     }
                                 },
@@ -746,8 +848,8 @@ fun AnalyzeTab(
                             Button(
                                 onClick = {
                                     executeWithCameraPermission {
-                                        val uri = createTempImageUri(context, "temp_capture.jpg")
-                                        tempPhotoUri = uri
+                                        val uri = createTempImageUri(context, "key_acc_${System.currentTimeMillis()}.jpg")
+                                        tempPhotoUriStr = uri.toString()
                                         takeKeyAccountabilitiesPhotoLauncher.launch(uri)
                                     }
                                 },
@@ -863,8 +965,8 @@ fun AnalyzeTab(
                             Button(
                                 onClick = {
                                     executeWithCameraPermission {
-                                        val uri = createTempImageUri(context, "temp_capture.jpg")
-                                        tempPhotoUri = uri
+                                        val uri = createTempImageUri(context, "key_kpi_${System.currentTimeMillis()}.jpg")
+                                        tempPhotoUriStr = uri.toString()
                                         takeKeyPerformanceIndicatorsPhotoLauncher.launch(uri)
                                     }
                                 },
@@ -980,8 +1082,8 @@ fun AnalyzeTab(
                             Button(
                                 onClick = {
                                     executeWithCameraPermission {
-                                        val uri = createTempImageUri(context, "temp_capture.jpg")
-                                        tempPhotoUri = uri
+                                        val uri = createTempImageUri(context, "qual_${System.currentTimeMillis()}.jpg")
+                                        tempPhotoUriStr = uri.toString()
                                         takeQualificationsPhotoLauncher.launch(uri)
                                     }
                                 },
@@ -1097,8 +1199,8 @@ fun AnalyzeTab(
                             Button(
                                 onClick = {
                                     executeWithCameraPermission {
-                                        val uri = createTempImageUri(context, "temp_capture.jpg")
-                                        tempPhotoUri = uri
+                                        val uri = createTempImageUri(context, "candidate_${System.currentTimeMillis()}.jpg")
+                                        tempPhotoUriStr = uri.toString()
                                         takeCandidatePhotoLauncher.launch(uri)
                                     }
                                 },
@@ -2225,7 +2327,7 @@ fun AboutGuideItem(title: String, description: String) {
 
 fun uriToBitmap(context: android.content.Context, uri: Uri): Bitmap? {
     return try {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+        val rawBitmap = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
             val source = ImageDecoder.createSource(context.contentResolver, uri)
             ImageDecoder.decodeBitmap(source) { decoder, _, _ ->
                 decoder.allocator = ImageDecoder.ALLOCATOR_SOFTWARE
@@ -2234,10 +2336,41 @@ fun uriToBitmap(context: android.content.Context, uri: Uri): Bitmap? {
             @Suppress("DEPRECATION")
             MediaStore.Images.Media.getBitmap(context.contentResolver, uri)
         }
+        
+        if (rawBitmap != null) {
+            correctBitmapOrientation(context, uri, rawBitmap)
+        } else {
+            null
+        }
     } catch (e: Exception) {
         e.printStackTrace()
         null
     }
+}
+
+fun correctBitmapOrientation(context: android.content.Context, uri: Uri, bitmap: Bitmap): Bitmap {
+    try {
+        context.contentResolver.openInputStream(uri)?.use { inputStream ->
+            val exifInterface = ExifInterface(inputStream)
+            val orientation = exifInterface.getAttributeInt(
+                ExifInterface.TAG_ORIENTATION,
+                ExifInterface.ORIENTATION_NORMAL
+            )
+            val rotationDegrees = when (orientation) {
+                ExifInterface.ORIENTATION_ROTATE_90 -> 90
+                ExifInterface.ORIENTATION_ROTATE_180 -> 180
+                ExifInterface.ORIENTATION_ROTATE_270 -> 270
+                else -> 0
+            }
+            if (rotationDegrees != 0) {
+                val matrix = Matrix().apply { postRotate(rotationDegrees.toFloat()) }
+                return Bitmap.createBitmap(bitmap, 0, 0, bitmap.width, bitmap.height, matrix, true)
+            }
+        }
+    } catch (e: Exception) {
+        e.printStackTrace()
+    }
+    return bitmap
 }
 
 fun createTempImageUri(context: android.content.Context, fileName: String): Uri {
