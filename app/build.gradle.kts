@@ -10,11 +10,11 @@ plugins {
 }
 
 android {
-  namespace = "com.example"
-  compileSdk { version = release(36) { minorApiLevel = 1 } }
+  namespace = "com.aistudio.resumematcher"
+  compileSdk = 36
 
   defaultConfig {
-    applicationId = "com.aistudio.resumematcher.vpkbyz"
+    applicationId = "com.aistudio.resumematcher"
     minSdk = 24
     targetSdk = 36
     versionCode = 1
@@ -46,7 +46,12 @@ android {
       proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
       signingConfig = signingConfigs.getByName("release")
     }
-    debug { signingConfig = signingConfigs.getByName("debugConfig") }
+    debug {
+      val debugKeystore = file("${rootDir}/debug.keystore")
+      if (debugKeystore.exists()) {
+        signingConfig = signingConfigs.getByName("debugConfig")
+      }
+    }
   }
   compileOptions {
     sourceCompatibility = JavaVersion.VERSION_11
