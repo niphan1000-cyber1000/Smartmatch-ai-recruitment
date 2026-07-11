@@ -233,6 +233,28 @@ fun AnalyzeTab(
     val scrollState = rememberScrollState()
     var showApiKeyWarning by remember { mutableStateOf(BuildConfig.GEMINI_API_KEY.isEmpty() || BuildConfig.GEMINI_API_KEY == "MY_GEMINI_API_KEY") }
 
+    var pendingCameraAction by remember { mutableStateOf<(() -> Unit)?>(null) }
+
+    val cameraPermissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission()
+    ) { isGranted: Boolean ->
+        if (isGranted) {
+            pendingCameraAction?.invoke()
+        } else {
+            Toast.makeText(context, "ต้องขออนุญาตใช้งานกล้องเพื่อถ่ายรูป", Toast.LENGTH_SHORT).show()
+        }
+        pendingCameraAction = null
+    }
+
+    val executeWithCameraPermission = { action: () -> Unit ->
+        if (androidx.core.content.ContextCompat.checkSelfPermission(context, android.Manifest.permission.CAMERA) == android.content.pm.PackageManager.PERMISSION_GRANTED) {
+            action()
+        } else {
+            pendingCameraAction = action
+            cameraPermissionLauncher.launch(android.Manifest.permission.CAMERA)
+        }
+    }
+
     val pickMultipleJobImagesLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetMultipleContents()
     ) { uris: List<Uri> ->
@@ -456,7 +478,7 @@ fun AnalyzeTab(
                             horizontalArrangement = Arrangement.spacedBy(6.dp)
                         ) {
                             Button(
-                                onClick = { takeJobPhotoLauncher.launch(null) },
+                                onClick = { executeWithCameraPermission { takeJobPhotoLauncher.launch(null) } },
                                 colors = ButtonDefaults.buttonColors(
                                     containerColor = Color(0xFF0EA5E9),
                                     contentColor = Color.White
@@ -567,7 +589,7 @@ fun AnalyzeTab(
                             horizontalArrangement = Arrangement.spacedBy(6.dp)
                         ) {
                             Button(
-                                onClick = { takeKeyResponsibilitiesPhotoLauncher.launch(null) },
+                                onClick = { executeWithCameraPermission { takeKeyResponsibilitiesPhotoLauncher.launch(null) } },
                                 colors = ButtonDefaults.buttonColors(
                                     containerColor = Color(0xFF0EA5E9),
                                     contentColor = Color.White
@@ -678,7 +700,7 @@ fun AnalyzeTab(
                             horizontalArrangement = Arrangement.spacedBy(6.dp)
                         ) {
                             Button(
-                                onClick = { takeKeyAccountabilitiesPhotoLauncher.launch(null) },
+                                onClick = { executeWithCameraPermission { takeKeyAccountabilitiesPhotoLauncher.launch(null) } },
                                 colors = ButtonDefaults.buttonColors(
                                     containerColor = Color(0xFF0EA5E9),
                                     contentColor = Color.White
@@ -789,7 +811,7 @@ fun AnalyzeTab(
                             horizontalArrangement = Arrangement.spacedBy(6.dp)
                         ) {
                             Button(
-                                onClick = { takeKeyPerformanceIndicatorsPhotoLauncher.launch(null) },
+                                onClick = { executeWithCameraPermission { takeKeyPerformanceIndicatorsPhotoLauncher.launch(null) } },
                                 colors = ButtonDefaults.buttonColors(
                                     containerColor = Color(0xFF0EA5E9),
                                     contentColor = Color.White
@@ -900,7 +922,7 @@ fun AnalyzeTab(
                             horizontalArrangement = Arrangement.spacedBy(6.dp)
                         ) {
                             Button(
-                                onClick = { takeQualificationsPhotoLauncher.launch(null) },
+                                onClick = { executeWithCameraPermission { takeQualificationsPhotoLauncher.launch(null) } },
                                 colors = ButtonDefaults.buttonColors(
                                     containerColor = Color(0xFF0EA5E9),
                                     contentColor = Color.White
@@ -1011,7 +1033,7 @@ fun AnalyzeTab(
                             horizontalArrangement = Arrangement.spacedBy(6.dp)
                         ) {
                             Button(
-                                onClick = { takeCandidatePhotoLauncher.launch(null) },
+                                onClick = { executeWithCameraPermission { takeCandidatePhotoLauncher.launch(null) } },
                                 colors = ButtonDefaults.buttonColors(
                                     containerColor = Color(0xFF0EA5E9),
                                     contentColor = Color.White
